@@ -33,12 +33,15 @@ class _LoginScreenState extends State<LoginScreen> {
           context.go('/onboarding');
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('로그인 에러: $e');
+      debugPrint('스택트레이스: $stackTrace');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('로그인 실패: $e'),
+            content: Text('로그인 실패: ${e.toString()}'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 10),
           ),
         );
       }

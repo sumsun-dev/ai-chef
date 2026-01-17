@@ -11,7 +11,7 @@ class AuthService {
 
   AuthService() {
     _googleSignIn = GoogleSignIn(
-      clientId: dotenv.env['GOOGLE_ANDROID_CLIENT_ID'],
+      serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
       scopes: ['email', 'profile'],
     );
   }
