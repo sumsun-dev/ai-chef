@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/chef_presets.dart';
+import '../models/chef_config.dart';
 import '../services/auth_service.dart';
 
 /// 온보딩 화면 - AI 셰프 설정
@@ -16,13 +18,28 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController(text: 'AI 셰프');
 
+  String? _selectedPresetId;
+  bool _showCustomization = false;
+
   String _personality = 'friendly';
-  final List<String> _expertise = ['한식'];
+  List<String> _expertise = ['한식'];
   String _formality = 'formal';
   String _emojiUsage = 'medium';
   String _technicality = 'general';
 
   bool _isLoading = false;
+
+  void _applyPreset(ChefPreset preset) {
+    setState(() {
+      _selectedPresetId = preset.id;
+      _nameController.text = preset.config.name;
+      _personality = preset.config.personality.name;
+      _expertise = List.from(preset.config.expertise);
+      _formality = preset.config.speakingStyle.formality.name;
+      _emojiUsage = preset.config.speakingStyle.emojiUsage.name;
+      _technicality = preset.config.speakingStyle.technicality.name;
+    });
+  }
 
   final Map<String, String> _personalityOptions = {
     'professional': '프로페셔널',
@@ -125,7 +142,120 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
             const SizedBox(height: 24),
 
-            // AI 셰프 이름
+            // 캐릭터 프리셋 선택
+            const Text(
+              '추천 AI 셰프',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '원하는 캐릭터를 선택하거나, 아래에서 직접 설정하세요',
+              style: TextStyle(
+                fontSize: 13,
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 140,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: ChefPresets.all.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                itemBuilder: (context, index) {
+                  final preset = ChefPresets.all[index];
+                  final isSelected = _selectedPresetId == preset.id;
+                  return GestureDetector(
+                    onTap: () => _applyPreset(preset),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      width: 120,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? colorScheme.primaryContainer
+                            : colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(16),
+                        border: isSelected
+                            ? Border.all(color: colorScheme.primary, width: 2)
+                            : null,
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            preset.emoji,
+                            style: const TextStyle(fontSize: 32),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            preset.name,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: isSelected
+                                  ? colorScheme.onPrimaryContainer
+                                  : colorScheme.onSurface,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            preset.description,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: isSelected
+                                  ? colorScheme.onPrimaryContainer
+                                      .withOpacity(0.8)
+                                  : colorScheme.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // 상세 설정 토글
+            InkWell(
+              onTap: () => setState(() => _showCustomization = !_showCustomization),
+              borderRadius: BorderRadius.circular(8),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      _showCustomization
+                          ? Icons.keyboard_arrow_up
+                          : Icons.keyboard_arrow_down,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _showCustomization ? '상세 설정 접기' : '상세 설정 펼치기',
+                      style: TextStyle(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // 상세 설정 섹션 (접기/펼치기)
+            if (_showCustomization) ...[
+              const SizedBox(height: 16),
+
+              // AI 셰프 이름
             const Text(
               'AI 셰프 이름',
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -253,6 +383,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 setState(() => _technicality = value.first);
               },
             ),
+            ],  // end if (_showCustomization)
+
             const SizedBox(height: 32),
 
             // 저장 버튼
