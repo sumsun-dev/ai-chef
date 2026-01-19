@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'models/ingredient.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/expiry_alert_screen.dart';
 
 /// 앱 라우터 Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -41,6 +43,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/expiry-alert',
+        builder: (context, state) {
+          final filter = state.extra as ExpiryStatus?;
+          return ExpiryAlertScreen(initialFilter: filter);
+        },
       ),
     ],
   );
