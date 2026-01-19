@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/models.dart';
@@ -212,6 +213,82 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
       return Recipe.fromJson(jsonData);
     } catch (e) {
       throw Exception('레시피 파싱 실패: $e');
+    }
+  }
+
+  /// 요리 사진 분석 (Vision API)
+  ///
+  /// 사진을 분석하여 익힘 정도, 플레이팅 상태, 개선점 등을 피드백합니다.
+  Future<CookingFeedback> analyzeCookingPhoto({
+    required Uint8List imageBytes,
+    required String mimeType,
+    required AIChefConfig chefConfig,
+    String? currentStep,
+    String? recipeName,
+  }) async {
+    final systemPrompt = _generateSystemPrompt(chefConfig);
+
+    String contextInfo = '';
+    if (recipeName != null) {
+      contextInfo += '\n현재 요리: $recipeName';
+    }
+    if (currentStep != null) {
+      contextInfo += '\n현재 단계: $currentStep';
+    }
+
+    final prompt = '''$systemPrompt
+$contextInfo
+
+## 요청
+사용자가 요리 중인 사진을 보내왔습니다. 다음을 분석해주세요:
+
+1. **익힘 정도 (doneness)**: 재료가 적절히 익었는지, 더 익혀야 하는지, 과하게 익었는지
+2. **플레이팅 (plating)**: 담음새, 배치, 시각적 매력도
+3. **전반적인 상태 (overallAssessment)**: 현재 요리 진행 상황에 대한 종합 평가
+4. **개선 제안 (suggestions)**: 구체적인 개선 방법 (최대 3개)
+5. **격려 메시지 (encouragement)**: 사용자를 응원하는 한마디
+
+## 응답 형식 (JSON)
+```json
+{
+  "doneness": "undercooked|perfect|overcooked|not_applicable",
+  "donenessDescription": "익힘 정도에 대한 상세 설명",
+  "platingScore": 1-10,
+  "platingFeedback": "플레이팅에 대한 피드백",
+  "overallAssessment": "전반적인 평가",
+  "suggestions": ["제안1", "제안2", "제안3"],
+  "encouragement": "격려 메시지"
+}
+```''';
+
+    final response = await _flashModel.generateContent([
+      Content.multi([
+        DataPart(mimeType, imageBytes),
+        TextPart(prompt),
+      ]),
+    ]);
+
+    final text = response.text ?? '';
+
+    try {
+      final jsonMatch = RegExp(r'```json\n?([\s\S]*?)\n?```').firstMatch(text);
+      if (jsonMatch != null) {
+        final jsonData = json.decode(jsonMatch.group(1)!);
+        return CookingFeedback.fromJson(jsonData);
+      }
+      final jsonData = json.decode(text);
+      return CookingFeedback.fromJson(jsonData);
+    } catch (e) {
+      // JSON 파싱 실패시 기본 피드백 생성
+      return CookingFeedback(
+        doneness: Doneness.notApplicable,
+        donenessDescription: text,
+        platingScore: 5,
+        platingFeedback: '분석 중 오류가 발생했습니다.',
+        overallAssessment: text,
+        suggestions: [],
+        encouragement: '다시 시도해 주세요!',
+      );
     }
   }
 }

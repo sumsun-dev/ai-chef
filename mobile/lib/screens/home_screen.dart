@@ -187,11 +187,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                 ),
                 _buildMenuCard(
-                  icon: Icons.kitchen,
-                  title: '재료 관리',
-                  color: colorScheme.tertiary,
+                  icon: Icons.camera_alt,
+                  title: '요리 가이드',
+                  color: Colors.deepOrange,
                   onTap: () {
-                    // TODO: 재료 관리 화면으로 이동
+                    context.push('/camera');
                   },
                 ),
                 _buildMenuCard(

@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
+import 'screens/camera_screen.dart';
 
 /// 앱 라우터 Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -41,6 +42,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/',
         builder: (context, state) => const HomeScreen(),
+      ),
+      GoRoute(
+        path: '/camera',
+        builder: (context, state) => const CameraScreen(),
       ),
     ],
   );
