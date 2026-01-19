@@ -302,6 +302,11 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/receipt-scan'),
+        icon: const Icon(Icons.document_scanner),
+        label: const Text('영수증 스캔'),
+      ),
     );
   }
 

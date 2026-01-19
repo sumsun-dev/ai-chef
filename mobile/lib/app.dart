@@ -7,7 +7,8 @@ import 'models/ingredient.dart';
 import 'screens/login_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
-import 'screens/expiry_alert_screen.dart';
+import 'screens/receipt_scan_screen.dart';
+import 'screens/ingredient_review_screen.dart';
 
 /// 앱 라우터 Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -45,10 +46,14 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HomeScreen(),
       ),
       GoRoute(
-        path: '/expiry-alert',
+        path: '/receipt-scan',
+        builder: (context, state) => const ReceiptScanScreen(),
+      ),
+      GoRoute(
+        path: '/receipt-result',
         builder: (context, state) {
-          final filter = state.extra as ExpiryStatus?;
-          return ExpiryAlertScreen(initialFilter: filter);
+          final result = state.extra as ReceiptOcrResult;
+          return IngredientReviewScreen(ocrResult: result);
         },
       ),
     ],

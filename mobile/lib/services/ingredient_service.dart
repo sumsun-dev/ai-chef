@@ -1,17 +1,18 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../models/ingredient.dart';
 
 /// 재료 관리 서비스
-/// Supabase를 통한 재료 CRUD 및 유통기한 조회
+/// Supabase를 통한 재료 CRUD 처리
 class IngredientService {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// 현재 사용자 ID
   String? get _userId => _supabase.auth.currentUser?.id;
 
-  /// 모든 재료 조회
-  Future<List<Ingredient>> getAllIngredients() async {
-    if (_userId == null) return [];
+  /// 재료 목록 조회
+  Future<List<Ingredient>> getIngredients() async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
         .from('ingredients')
@@ -20,69 +21,30 @@ class IngredientService {
         .order('expiry_date', ascending: true);
 
     return (response as List)
-        .map((json) => Ingredient.fromJson(json))
+        .map((item) => Ingredient.fromJson(item))
         .toList();
   }
 
-  /// 유통기한 알림이 필요한 재료 조회 (7일 이내 만료 또는 만료됨)
-  Future<List<Ingredient>> getExpiringIngredients() async {
-    if (_userId == null) return [];
-
-    final sevenDaysFromNow =
-        DateTime.now().add(const Duration(days: 7)).toIso8601String().split('T')[0];
+  /// 재료 단일 조회
+  Future<Ingredient> getIngredient(String id) async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
         .from('ingredients')
         .select()
+        .eq('id', id)
         .eq('user_id', _userId!)
-        .lte('expiry_date', sevenDaysFromNow)
-        .order('expiry_date', ascending: true);
+        .single();
 
-    return (response as List)
-        .map((json) => Ingredient.fromJson(json))
-        .toList();
-  }
-
-  /// 유통기한별 재료 그룹 조회
-  Future<ExpiryIngredientGroup> getExpiryIngredientGroup() async {
-    final ingredients = await getExpiringIngredients();
-    return ExpiryIngredientGroup.fromIngredients(ingredients);
-  }
-
-  /// 특정 상태의 재료만 조회
-  Future<List<Ingredient>> getIngredientsByExpiryStatus(
-      ExpiryStatus status) async {
-    final ingredients = await getAllIngredients();
-    return ingredients.where((i) => i.expiryStatus == status).toList();
+    return Ingredient.fromJson(response);
   }
 
   /// 재료 추가
-  Future<Ingredient> addIngredient({
-    required String name,
-    required String category,
-    required double quantity,
-    required String unit,
-    DateTime? purchaseDate,
-    required DateTime expiryDate,
-    double? price,
-    StorageLocation storageLocation = StorageLocation.refrigerated,
-    String? memo,
-  }) async {
+  Future<Ingredient> addIngredient(Ingredient ingredient) async {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
-    final data = {
-      'user_id': _userId,
-      'name': name,
-      'category': category,
-      'quantity': quantity,
-      'unit': unit,
-      'purchase_date': purchaseDate?.toIso8601String().split('T')[0],
-      'expiry_date': expiryDate.toIso8601String().split('T')[0],
-      'price': price,
-      'storage_location':
-          storageLocation.name == 'roomTemp' ? 'room_temp' : storageLocation.name,
-      'memo': memo,
-    };
+    final data = ingredient.toJson();
+    data['user_id'] = _userId;
 
     final response = await _supabase
         .from('ingredients')
@@ -93,43 +55,35 @@ class IngredientService {
     return Ingredient.fromJson(response);
   }
 
-  /// 재료 수정
-  Future<Ingredient> updateIngredient(
-    String ingredientId, {
-    String? name,
-    String? category,
-    double? quantity,
-    String? unit,
-    DateTime? purchaseDate,
-    DateTime? expiryDate,
-    double? price,
-    StorageLocation? storageLocation,
-    String? memo,
-  }) async {
+  /// 여러 재료 일괄 추가 (OCR 결과 저장용)
+  Future<List<Ingredient>> saveIngredients(List<Ingredient> ingredients) async {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
-    final data = <String, dynamic>{};
-    if (name != null) data['name'] = name;
-    if (category != null) data['category'] = category;
-    if (quantity != null) data['quantity'] = quantity;
-    if (unit != null) data['unit'] = unit;
-    if (purchaseDate != null) {
-      data['purchase_date'] = purchaseDate.toIso8601String().split('T')[0];
-    }
-    if (expiryDate != null) {
-      data['expiry_date'] = expiryDate.toIso8601String().split('T')[0];
-    }
-    if (price != null) data['price'] = price;
-    if (storageLocation != null) {
-      data['storage_location'] =
-          storageLocation.name == 'roomTemp' ? 'room_temp' : storageLocation.name;
-    }
-    if (memo != null) data['memo'] = memo;
+    final dataList = ingredients.map((ingredient) {
+      final data = ingredient.toJson();
+      data['user_id'] = _userId;
+      return data;
+    }).toList();
 
     final response = await _supabase
         .from('ingredients')
-        .update(data)
-        .eq('id', ingredientId)
+        .insert(dataList)
+        .select();
+
+    return (response as List)
+        .map((item) => Ingredient.fromJson(item))
+        .toList();
+  }
+
+  /// 재료 수정
+  Future<Ingredient> updateIngredient(Ingredient ingredient) async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
+    if (ingredient.id == null) throw Exception('재료 ID가 필요합니다.');
+
+    final response = await _supabase
+        .from('ingredients')
+        .update(ingredient.toJson())
+        .eq('id', ingredient.id!)
         .eq('user_id', _userId!)
         .select()
         .single();
@@ -138,47 +92,57 @@ class IngredientService {
   }
 
   /// 재료 삭제
-  Future<void> deleteIngredient(String ingredientId) async {
+  Future<void> deleteIngredient(String id) async {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     await _supabase
         .from('ingredients')
         .delete()
-        .eq('id', ingredientId)
+        .eq('id', id)
         .eq('user_id', _userId!);
   }
 
-  /// 재료 수량 차감 (조리 시 사용)
-  Future<void> consumeIngredient(String ingredientId, double amount) async {
+  /// 유통기한 임박 재료 조회
+  Future<List<Ingredient>> getExpiringIngredients({int days = 7}) async {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
-    // 현재 수량 조회
-    final current = await _supabase
+    final now = DateTime.now();
+    final threshold = now.add(Duration(days: days));
+
+    final response = await _supabase
         .from('ingredients')
-        .select('quantity')
-        .eq('id', ingredientId)
+        .select()
         .eq('user_id', _userId!)
-        .single();
+        .gte('expiry_date', now.toIso8601String().split('T')[0])
+        .lte('expiry_date', threshold.toIso8601String().split('T')[0])
+        .order('expiry_date', ascending: true);
 
-    final currentQuantity = (current['quantity'] as num).toDouble();
-    final newQuantity = currentQuantity - amount;
+    return (response as List)
+        .map((item) => Ingredient.fromJson(item))
+        .toList();
+  }
 
-    if (newQuantity <= 0) {
-      // 수량이 0 이하면 삭제
-      await deleteIngredient(ingredientId);
-    } else {
-      // 수량 업데이트
-      await _supabase
-          .from('ingredients')
-          .update({'quantity': newQuantity})
-          .eq('id', ingredientId)
-          .eq('user_id', _userId!);
-    }
+  /// 만료된 재료 조회
+  Future<List<Ingredient>> getExpiredIngredients() async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
+
+    final now = DateTime.now();
+
+    final response = await _supabase
+        .from('ingredients')
+        .select()
+        .eq('user_id', _userId!)
+        .lt('expiry_date', now.toIso8601String().split('T')[0])
+        .order('expiry_date', ascending: true);
+
+    return (response as List)
+        .map((item) => Ingredient.fromJson(item))
+        .toList();
   }
 
   /// 카테고리별 재료 조회
   Future<List<Ingredient>> getIngredientsByCategory(String category) async {
-    if (_userId == null) return [];
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
         .from('ingredients')
@@ -188,27 +152,41 @@ class IngredientService {
         .order('expiry_date', ascending: true);
 
     return (response as List)
-        .map((json) => Ingredient.fromJson(json))
+        .map((item) => Ingredient.fromJson(item))
         .toList();
   }
 
   /// 보관 위치별 재료 조회
   Future<List<Ingredient>> getIngredientsByStorageLocation(
-      StorageLocation location) async {
-    if (_userId == null) return [];
-
-    final locationStr =
-        location.name == 'roomTemp' ? 'room_temp' : location.name;
+    StorageLocation location,
+  ) async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
         .from('ingredients')
         .select()
         .eq('user_id', _userId!)
-        .eq('storage_location', locationStr)
+        .eq('storage_location', location.value)
         .order('expiry_date', ascending: true);
 
     return (response as List)
-        .map((json) => Ingredient.fromJson(json))
+        .map((item) => Ingredient.fromJson(item))
+        .toList();
+  }
+
+  /// 재료 검색
+  Future<List<Ingredient>> searchIngredients(String query) async {
+    if (_userId == null) throw Exception('로그인이 필요합니다.');
+
+    final response = await _supabase
+        .from('ingredients')
+        .select()
+        .eq('user_id', _userId!)
+        .ilike('name', '%$query%')
+        .order('name', ascending: true);
+
+    return (response as List)
+        .map((item) => Ingredient.fromJson(item))
         .toList();
   }
 }
