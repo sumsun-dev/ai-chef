@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../models/ingredient.dart';
 import '../services/auth_service.dart';
+import '../services/ingredient_service.dart';
+import '../services/notification_service.dart';
 
 /// 홈 화면
 class HomeScreen extends StatefulWidget {
@@ -13,13 +16,33 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
+  final IngredientService _ingredientService = IngredientService();
+  final NotificationService _notificationService = NotificationService();
   Map<String, dynamic>? _profile;
+  ExpiryIngredientGroup? _expiryGroup;
+  List<Ingredient> _priorityIngredients = [];
   bool _isLoading = true;
+  bool _isLoadingExpiry = true;
 
   @override
   void initState() {
     super.initState();
-    _loadProfile();
+    _loadData();
+    _setupNotifications();
+  }
+
+  Future<void> _setupNotifications() async {
+    // 매일 아침 알림 스케줄
+    await _notificationService.scheduleDailyExpiryCheck();
+    // 앱 시작 시 유통기한 알림 체크
+    await _notificationService.checkAndShowExpiryNotifications();
+  }
+
+  Future<void> _loadData() async {
+    await Future.wait([
+      _loadProfile(),
+      _loadExpiryData(),
+    ]);
   }
 
   Future<void> _loadProfile() async {
@@ -31,6 +54,26 @@ class _HomeScreenState extends State<HomeScreen> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadExpiryData() async {
+    try {
+      final expiryGroup = await _ingredientService.getExpiryIngredientGroup();
+
+      // 우선 사용 재료: 만료됨 + 3일 이내 (최대 5개)
+      final priorityItems = [
+        ...expiryGroup.expiredItems,
+        ...expiryGroup.criticalItems,
+      ].take(5).toList();
+
+      setState(() {
+        _expiryGroup = expiryGroup;
+        _priorityIngredients = priorityItems;
+        _isLoadingExpiry = false;
+      });
+    } catch (e) {
+      setState(() => _isLoadingExpiry = false);
     }
   }
 
@@ -124,32 +167,84 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 유통기한 알림 (더미)
-            const Text(
-              '유통기한 알림',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+            // 우선 사용 재료 (긴급한 재료가 있을 때만 표시)
+            if (_priorityIngredients.isNotEmpty) ...[
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.priority_high, color: Colors.red, size: 20),
+                      SizedBox(width: 4),
+                      Text(
+                        '우선 사용 재료',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: () => context.push('/expiry-alert'),
+                    child: const Text('전체보기'),
+                  ),
+                ],
               ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 100,
+                child: ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: _priorityIngredients.length,
+                  itemBuilder: (context, index) {
+                    return _buildPriorityIngredientCard(_priorityIngredients[index]);
+                  },
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+
+            // 유통기한 알림
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '유통기한 알림',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (_isLoadingExpiry)
+                  const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+              ],
             ),
             const SizedBox(height: 12),
             _buildAlertCard(
               icon: Icons.warning_amber,
               color: Colors.red,
               title: '유통기한 지남',
-              count: 0,
+              count: _expiryGroup?.expiredCount ?? 0,
+              onTap: () => context.push('/expiry-alert', extra: ExpiryStatus.expired),
             ),
             _buildAlertCard(
               icon: Icons.access_time,
               color: Colors.orange,
               title: '3일 이내 만료',
-              count: 0,
+              count: _expiryGroup?.criticalCount ?? 0,
+              onTap: () => context.push('/expiry-alert', extra: ExpiryStatus.critical),
             ),
             _buildAlertCard(
               icon: Icons.info_outline,
               color: Colors.blue,
               title: '7일 이내 만료',
-              count: 0,
+              count: _expiryGroup?.warningCount ?? 0,
+              onTap: () => context.push('/expiry-alert', extra: ExpiryStatus.warning),
             ),
             const SizedBox(height: 24),
 
@@ -215,24 +310,43 @@ class _HomeScreenState extends State<HomeScreen> {
     required Color color,
     required String title,
     required int count,
+    VoidCallback? onTap,
   }) {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Icon(icon, color: color),
-        title: Text(title),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            '$count개',
+      child: InkWell(
+        onTap: count > 0 ? onTap : null,
+        borderRadius: BorderRadius.circular(12),
+        child: ListTile(
+          leading: Icon(icon, color: count > 0 ? color : Colors.grey),
+          title: Text(
+            title,
             style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.bold,
+              color: count > 0 ? null : Colors.grey,
             ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: count > 0 ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  '$count개',
+                  style: TextStyle(
+                    color: count > 0 ? color : Colors.grey,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              if (count > 0) ...[
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right, color: Colors.grey),
+              ],
+            ],
           ),
         ),
       ),
@@ -268,5 +382,87 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  Widget _buildPriorityIngredientCard(Ingredient ingredient) {
+    final color = _getExpiryColor(ingredient.expiryStatus);
+
+    return Container(
+      width: 140,
+      margin: const EdgeInsets.only(right: 12),
+      child: Card(
+        color: color.withOpacity(0.1),
+        child: InkWell(
+          onTap: () => context.push('/expiry-alert', extra: ingredient.expiryStatus),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        ingredient.name,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: color,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        ingredient.dDayString,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  '${ingredient.quantity} ${ingredient.unit}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Text(
+                  ingredient.storageLocation.displayName,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getExpiryColor(ExpiryStatus status) {
+    switch (status) {
+      case ExpiryStatus.expired:
+        return Colors.red;
+      case ExpiryStatus.critical:
+        return Colors.orange;
+      case ExpiryStatus.warning:
+        return Colors.blue;
+      case ExpiryStatus.safe:
+        return Colors.green;
+    }
   }
 }

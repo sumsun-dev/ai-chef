@@ -73,3 +73,4 @@ mobile/ios/Runner/GeneratedPluginRegistrant.*
 .pub-cache/
 .pub/
 pubspec.lock
+.beads/
