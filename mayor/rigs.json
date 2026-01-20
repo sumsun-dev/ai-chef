@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "rigs": {
+    "ai_book": {
+      "git_url": "/home/ai_sh/ai-book-project",
+      "added_at": "2026-01-18T23:10:16.793013469+09:00",
+      "beads": {
+        "repo": "/home/ai_sh/gt/ai_book",
+        "prefix": "ab"
+      }
+    },
+    "ai_chef": {
+      "git_url": "/mnt/c/Users/ai_sh/ai-chef-project",
+      "added_at": "2026-01-18T11:32:58.756073058+09:00",
+      "beads": {
+        "repo": "/home/ai_sh/gt/ai_chef",
+        "prefix": "ac"
+      }
+    }
+  }
+}

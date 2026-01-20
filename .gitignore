@@ -74,5 +74,19 @@ mobile/ios/Runner/GeneratedPluginRegistrant.*
 .pub/
 pubspec.lock
 
-# Gas Town
-.beads/
+# =============================================================================
+# Gas Town HQ - Runtime state (transient)
+# =============================================================================
+**/state.json
+**/registry.json
+.events.jsonl
+logs/
+
+# =============================================================================
+# Rig git worktrees (recreate with 'gt sling' or 'gt rig add')
+# =============================================================================
+**/polecats/
+**/mayor/rig/
+**/refinery/rig/
+**/crew/
+**/.runtime/
