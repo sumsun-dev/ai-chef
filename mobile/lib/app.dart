@@ -9,6 +9,7 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/ingredient_add_screen.dart';
+import 'screens/chat_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
@@ -65,6 +66,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final recipe = state.extra as Recipe;
           return RecipeDetailScreen(recipe: recipe);
+        },
+      ),
+      GoRoute(
+        path: '/chat',
+        builder: (context, state) {
+          final initialMessage = state.extra as String?;
+          return ChatScreen(initialMessage: initialMessage);
         },
       ),
 

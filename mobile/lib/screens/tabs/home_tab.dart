@@ -190,14 +190,16 @@ class _HomeTabState extends State<HomeTab> {
           suffixIcon: IconButton(
             icon: Icon(Icons.send, color: colorScheme.primary),
             onPressed: () {
-              // TODO: 메시지 전송
+              final text = _chatController.text.trim();
               _chatController.clear();
+              context.push('/chat', extra: text.isNotEmpty ? text : null);
             },
           ),
         ),
         onSubmitted: (value) {
-          // TODO: 메시지 전송
+          final text = value.trim();
           _chatController.clear();
+          context.push('/chat', extra: text.isNotEmpty ? text : null);
         },
       ),
     );
