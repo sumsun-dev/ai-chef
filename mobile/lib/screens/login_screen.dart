@@ -21,17 +21,17 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _authService.signInWithGoogle();
 
-      if (mounted) {
-        // 로그인 성공 -> 프로필 확인
-        final profile = await _authService.getUserProfile();
+      if (!mounted) return;
+      // 로그인 성공 -> 프로필 확인
+      final profile = await _authService.getUserProfile();
 
-        if (profile != null && profile['ai_chef_name'] != null) {
-          // 이미 설정 완료 -> 홈으로
-          context.go('/');
-        } else {
-          // 첫 로그인 -> 온보딩으로
-          context.go('/onboarding');
-        }
+      if (!mounted) return;
+      if (profile != null && profile['ai_chef_name'] != null) {
+        // 이미 설정 완료 -> 홈으로
+        context.go('/');
+      } else {
+        // 첫 로그인 -> 온보딩으로
+        context.go('/onboarding');
       }
     } catch (e, stackTrace) {
       debugPrint('로그인 에러: $e');
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withValues(alpha: 0.2),
                           blurRadius: 20,
                           offset: const Offset(0, 10),
                         ),
@@ -171,7 +171,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

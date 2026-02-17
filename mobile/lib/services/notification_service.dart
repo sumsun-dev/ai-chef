@@ -2,7 +2,6 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 
-import '../models/ingredient.dart';
 import 'ingredient_service.dart';
 
 /// 유통기한 알림 서비스

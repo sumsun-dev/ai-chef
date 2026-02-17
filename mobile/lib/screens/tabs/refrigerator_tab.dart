@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/ingredient.dart';
 import '../../services/ingredient_service.dart';
 
@@ -53,11 +54,10 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
 
   List<Ingredient> get _expiringIngredients {
     return _ingredients.where((i) {
-      if (i.expiryDate == null) return false;
-      final daysUntil = i.expiryDate!.difference(DateTime.now()).inDays;
+      final daysUntil = i.expiryDate.difference(DateTime.now()).inDays;
       return daysUntil <= 3 && daysUntil >= 0;
     }).toList()
-      ..sort((a, b) => a.expiryDate!.compareTo(b.expiryDate!));
+      ..sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
   }
 
   @override
@@ -240,7 +240,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: expiryColor.withOpacity(0.1),
+            color: expiryColor.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Center(
@@ -257,24 +257,21 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
         subtitle: Text(
           '${ingredient.quantity} ${ingredient.unit} · ${ingredient.storageLocation.displayName}',
         ),
-        trailing: ingredient.expiryDate != null
-            ? Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: expiryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  ingredient.dDayString,
-                  style: TextStyle(
-                    color: expiryColor,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                ),
-              )
-            : null,
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: expiryColor.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            ingredient.dDayString,
+            style: TextStyle(
+              color: expiryColor,
+              fontWeight: FontWeight.bold,
+              fontSize: 12,
+            ),
+          ),
+        ),
         onTap: () => _showEditIngredientSheet(ingredient),
       ),
     );
@@ -358,7 +355,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                         label: '사진으로\n인식',
                         onTap: () {
                           Navigator.pop(context);
-                          // TODO: 사진 인식
+                          context.push('/camera');
                         },
                       ),
                     ),
@@ -367,9 +364,11 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                       child: _buildAddOption(
                         icon: Icons.edit,
                         label: '직접\n입력',
-                        onTap: () {
+                        onTap: () async {
                           Navigator.pop(context);
-                          // TODO: 직접 입력 화면
+                          final result =
+                              await context.push<bool>('/ingredient/add');
+                          if (result == true) _loadIngredients();
                         },
                       ),
                     ),
@@ -416,10 +415,9 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   }
 
   void _showEditIngredientSheet(Ingredient ingredient) {
-    // TODO: 재료 수정/삭제 바텀시트
     showModalBottomSheet(
       context: context,
-      builder: (context) => Container(
+      builder: (sheetContext) => Container(
         padding: const EdgeInsets.all(16),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -427,18 +425,50 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
             ListTile(
               leading: const Icon(Icons.edit),
               title: const Text('수정'),
-              onTap: () {
-                Navigator.pop(context);
-                // TODO: 수정 화면
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                final result = await context.push<bool>(
+                  '/ingredient/edit',
+                  extra: ingredient,
+                );
+                if (result == true) _loadIngredients();
               },
             ),
             ListTile(
               leading: const Icon(Icons.delete, color: Colors.red),
               title: const Text('삭제', style: TextStyle(color: Colors.red)),
               onTap: () async {
-                Navigator.pop(context);
-                await _ingredientService.deleteIngredient(ingredient.id);
-                _loadIngredients();
+                Navigator.pop(sheetContext);
+                final confirmed = await showDialog<bool>(
+                  context: context,
+                  builder: (ctx) => AlertDialog(
+                    title: const Text('재료 삭제'),
+                    content: Text('${ingredient.name}을(를) 삭제하시겠습니까?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, false),
+                        child: const Text('취소'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, true),
+                        style:
+                            TextButton.styleFrom(foregroundColor: Colors.red),
+                        child: const Text('삭제'),
+                      ),
+                    ],
+                  ),
+                );
+                if (confirmed == true) {
+                  await _ingredientService.deleteIngredient(ingredient.id);
+                  _loadIngredients();
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${ingredient.name}이(가) 삭제되었습니다.'),
+                      ),
+                    );
+                  }
+                }
               },
             ),
           ],

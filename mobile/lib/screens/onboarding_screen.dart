@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/chef_presets.dart';
-import '../models/chef_config.dart';
 import '../services/auth_service.dart';
 
 /// 온보딩 화면 - AI 셰프 설정
@@ -161,7 +160,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: ChefPresets.all.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, _) => const SizedBox(width: 12),
                 itemBuilder: (context, index) {
                   final preset = ChefPresets.all[index];
                   final isSelected = _selectedPresetId == preset.id;
@@ -208,7 +207,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               fontSize: 10,
                               color: isSelected
                                   ? colorScheme.onPrimaryContainer
-                                      .withOpacity(0.8)
+                                      .withValues(alpha: 0.8)
                                   : colorScheme.onSurfaceVariant,
                             ),
                             textAlign: TextAlign.center,

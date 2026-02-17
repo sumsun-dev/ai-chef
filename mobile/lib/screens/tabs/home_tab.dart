@@ -17,7 +17,6 @@ class _HomeTabState extends State<HomeTab> {
   final IngredientService _ingredientService = IngredientService();
   final TextEditingController _chatController = TextEditingController();
 
-  Map<String, dynamic>? _profile;
   List<Ingredient> _expiringIngredients = [];
   bool _isLoading = true;
   Chef _currentChef = Chefs.defaultChef;
@@ -48,7 +47,6 @@ class _HomeTabState extends State<HomeTab> {
       ].take(5).toList();
 
       setState(() {
-        _profile = profile;
         _currentChef = chef;
         _expiringIngredients = expiringItems;
         _isLoading = false;
@@ -117,13 +115,13 @@ class _HomeTabState extends State<HomeTab> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(_currentChef.primaryColor).withOpacity(0.1),
-            Color(_currentChef.primaryColor).withOpacity(0.05),
+            Color(_currentChef.primaryColor).withValues(alpha: 0.1),
+            Color(_currentChef.primaryColor).withValues(alpha: 0.05),
           ],
         ),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-          color: Color(_currentChef.primaryColor).withOpacity(0.2),
+          color: Color(_currentChef.primaryColor).withValues(alpha: 0.2),
         ),
       ),
       child: Row(
@@ -136,7 +134,7 @@ class _HomeTabState extends State<HomeTab> {
               borderRadius: BorderRadius.circular(15),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Colors.black.withValues(alpha: 0.1),
                   blurRadius: 10,
                 ),
               ],
@@ -323,9 +321,9 @@ class _HomeTabState extends State<HomeTab> {
       margin: const EdgeInsets.only(right: 8),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withOpacity(0.3)),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

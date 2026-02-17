@@ -336,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: count > 0 ? color.withOpacity(0.1) : Colors.grey.withOpacity(0.1),
+                  color: count > 0 ? color.withValues(alpha: 0.1) : Colors.grey.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -396,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
       width: 140,
       margin: const EdgeInsets.only(right: 12),
       child: Card(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         child: InkWell(
           onTap: () => context.push('/expiry-alert', extra: ingredient.expiryStatus),
           borderRadius: BorderRadius.circular(12),

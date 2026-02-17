@@ -228,7 +228,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
                 color: colorScheme.surface,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 8,
                     offset: const Offset(0, -2),
                   ),
@@ -392,7 +392,7 @@ class _IngredientCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: colors[confidence]!.withOpacity(0.1),
+        color: colors[confidence]!.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
@@ -579,7 +579,7 @@ class _IngredientEditSheetState extends State<_IngredientEditSheet> {
                 Expanded(
                   flex: 1,
                   child: DropdownButtonFormField<String>(
-                    value: _units.contains(_selectedUnit) ? _selectedUnit : _units.first,
+                    initialValue: _units.contains(_selectedUnit) ? _selectedUnit : _units.first,
                     decoration: const InputDecoration(
                       labelText: '단위',
                       border: OutlineInputBorder(),
@@ -596,7 +596,7 @@ class _IngredientEditSheetState extends State<_IngredientEditSheet> {
 
             // 카테고리
             DropdownButtonFormField<String>(
-              value: _categories.containsKey(_selectedCategory)
+              initialValue: _categories.containsKey(_selectedCategory)
                   ? _selectedCategory
                   : 'other',
               decoration: const InputDecoration(
@@ -612,7 +612,7 @@ class _IngredientEditSheetState extends State<_IngredientEditSheet> {
 
             // 보관 위치
             DropdownButtonFormField<StorageLocation>(
-              value: _selectedStorage,
+              initialValue: _selectedStorage,
               decoration: const InputDecoration(
                 labelText: '보관 위치',
                 border: OutlineInputBorder(),

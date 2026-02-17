@@ -148,8 +148,8 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 - 보유 도구: ${tools.join(", ")}
 - 선호 요리 스타일: ${cuisine ?? "상관없음"}
 - 난이도: ${difficulty?.name ?? "상관없음"}
-- 조리 시간: ${cookingTime != null ? "${cookingTime}분 이내" : "상관없음"}
-- 인원: ${servings}인분
+- 조리 시간: ${cookingTime != null ? "$cookingTime분 이내" : "상관없음"}
+- 인원: $servings인분
 
 ## 요청
 위 재료와 도구로 만들 수 있는 맞춤 레시피를 추천해주세요.
