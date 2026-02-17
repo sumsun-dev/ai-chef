@@ -1,85 +1,75 @@
-# AI 셰프 (AI Chef)
+# AI Chef
 
-> 스마트 재료 관리 & 맞춤형 레시피 추천 앱
+> Smart ingredient management & personalized recipe recommendation app
 
-나만의 AI 셰프와 함께 개인 취향에 맞는 건강하고 맛있는 식사를 낭비 없이 즐기세요.
-
----
-
-## 프로젝트 개요
-
-AI 셰프는 식재료 관리와 개인화된 레시피 추천을 결합한 요리 어시스턴트 앱입니다.
-
-### 핵심 기능
-
-- **나만의 AI 셰프**: 이름, 성격, 전문 분야를 커스터마이징한 개인 셰프
-- **재료 관리**: 영수증 사진으로 자동 등록, 유통기한 알림
-- **맞춤 레시피**: 보유 재료와 도구 기반 추천
-- **시각적 가이드**: 사진 분석으로 실시간 요리 피드백
-- **개인정보 보호**: 계정별 완전 격리된 메모리
+AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리 어시스턴트 앱입니다. Google Gemini API를 활용하여 나만의 AI 셰프 경험을 제공합니다.
 
 ---
 
-## 문서 구조
+## 핵심 기능
 
-```
-ai-chef-project/
-├── README.md                    # 프로젝트 개요 (현재 파일)
-├── docs/
-│   ├── PRD_v1.3.md             # 제품 요구사항 정의서
-│   └── COST_ESTIMATION.md      # 비용 추정 문서
-└── src/                         # (개발 시 추가)
-```
+- **나만의 AI 셰프** - 이름, 성격, 전문 분야를 커스터마이징한 개인 셰프
+- **재료 관리** - 영수증 OCR 자동 등록, 유통기한 알림, 보관위치별 분류
+- **맞춤 레시피** - 보유 재료와 도구 기반 AI 레시피 추천
+- **시각적 가이드** - 사진 분석으로 실시간 요리 피드백
 
 ---
 
 ## 기술 스택
 
-### AI
-| 용도 | 모델 | 비용 (1M tokens) |
-|------|------|------------------|
-| 레시피 생성 (최신) | Gemini 3 Pro | $2.00 / $12.00 |
-| 레시피 생성 (안정) | Gemini 2.5 Pro | $1.25 / $10.00 |
-| 빠른 대화 (최신) | Gemini 3 Flash | $0.50 / $3.00 |
-| 빠른 대화 (안정) | Gemini 2.5 Flash | $0.30 / $2.50 |
-| 영상 가이드 | Veo 3.1 | 별도 과금 |
-| 온디바이스 | Gemini Nano | 무료 |
+### Mobile (Flutter)
+| 구분 | 기술 |
+|------|------|
+| Framework | Flutter 3.10+, Dart 3.10+ |
+| State Management | Riverpod 3 |
+| Navigation | Go Router 17 |
+| Backend SDK | Supabase Flutter 2.12 |
+| AI | Google Generative AI 0.4 |
+| Camera | Image Picker |
+| Notifications | Flutter Local Notifications 19 |
 
-### 프론트엔드
-- React 18+ / Next.js 14+
-- Tailwind CSS + shadcn/ui
-- Zustand + React Query
+### Web (Next.js)
+| 구분 | 기술 |
+|------|------|
+| Framework | Next.js 16, React 19 |
+| Styling | Tailwind CSS 4, shadcn/ui |
+| State | Zustand 5 |
+| Backend SDK | Supabase SSR 0.8 |
+| AI | Google Generative AI 0.24 |
+| Animation | Framer Motion 12 |
 
-### 백엔드
-- Node.js 20 LTS / Python 3.12
-- Supabase (PostgreSQL)
-- Google Cloud Run
+### Backend
+| 구분 | 기술 |
+|------|------|
+| Database | Supabase (PostgreSQL + RLS) |
+| Auth | Supabase Auth + Google Sign-In |
+| AI Model | Gemini 2.5 Flash / Pro |
+| Deploy | Google Cloud Run |
 
 ---
 
-## 개발 로드맵
+## 프로젝트 구조
 
-| Phase | 기간 | 주요 내용 |
-|-------|------|-----------|
-| MVP | 5주 | 재료 관리, AI 셰프, 레시피 추천 |
-| 확장 | 4주 | OCR, 음성 입력, 쇼핑 리스트 |
-| 네이티브 | 6주 | React Native 앱 |
-
----
-
-## 비용 추정 (Gemini 3 Batch 기준)
-
-| 규모 | 월 비용 | 사용자당 |
-|------|---------|----------|
-| 100 MAU | $97 | $0.97 |
-| 1,000 MAU | $454 | $0.45 |
-| 5,000 MAU | $1,995 | $0.40 |
-
-**모델 선택 권장:**
-- MVP: Gemini 2.5 Batch ($351/월, $0.35/user)
-- 프로덕션: Gemini 3 Batch ($454/월, $0.45/user)
-
-> 상세 내용: [COST_ESTIMATION.md](docs/COST_ESTIMATION.md)
+```
+ai-chef/
+├── app/                    # Next.js 16 웹 앱
+│   └── src/
+│       ├── app/            # App Router (pages, API routes)
+│       │   └── api/        # chat, recipe API endpoints
+│       ├── components/     # UI components (shadcn/ui)
+│       └── lib/            # Gemini client, utilities
+├── mobile/                 # Flutter 모바일 앱
+│   ├── lib/
+│   │   ├── models/         # Ingredient, Recipe, Chef 등 데이터 모델
+│   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, Profile)
+│   │   │   └── tabs/       # Bottom navigation 탭 화면
+│   │   └── services/       # Supabase CRUD, Gemini, OCR, 알림 서비스
+│   └── test/               # 단위 테스트
+├── supabase/
+│   └── migrations/         # DB 마이그레이션 (source of truth)
+├── docs/                   # PRD, 비용 추정, 설계 문서
+└── CLAUDE.md               # Claude Code 프로젝트 가이드라인
+```
 
 ---
 
@@ -87,31 +77,30 @@ ai-chef-project/
 
 ### 사전 요구사항
 
-- Node.js 20+
-- pnpm (권장) 또는 npm
+- Flutter 3.10+ & Dart 3.10+
+- Node.js 20+ & pnpm
 - Google Cloud 계정 (Gemini API)
 - Supabase 계정
 
-### 설치 (예정)
+### 설치
 
 ```bash
 # 저장소 클론
 git clone https://github.com/your-org/ai-chef.git
 cd ai-chef
 
-# 의존성 설치
-pnpm install
+# Web 앱 의존성 설치
+cd app && pnpm install && cd ..
+
+# Mobile 앱 의존성 설치
+cd mobile && flutter pub get && cd ..
 
 # 환경 변수 설정
-cp .env.example .env.local
-
-# 개발 서버 실행
-pnpm dev
+# app/.env.local (Web)
+# mobile/.env (Flutter)
 ```
 
----
-
-## 환경 변수
+### 환경 변수
 
 ```env
 # Supabase
@@ -126,15 +115,68 @@ GEMINI_API_KEY=your_gemini_api_key
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
+### 실행
+
+```bash
+# Web 개발 서버
+cd app && pnpm dev
+
+# Mobile (에뮬레이터/디바이스)
+cd mobile && flutter run
+
+# 테스트
+cd mobile && flutter test
+```
+
+---
+
+## 개발 명령어
+
+### Web (Next.js)
+```bash
+pnpm dev              # 개발 서버 (port 3000)
+pnpm build            # 프로덕션 빌드
+pnpm lint             # ESLint
+pnpm remotion:studio  # Remotion 영상 편집기
+pnpm remotion:render  # 인트로 영상 렌더링
+```
+
+### Mobile (Flutter)
+```bash
+flutter run           # 디바이스/에뮬레이터 실행
+flutter test          # 단위 테스트
+flutter analyze       # 정적 분석
+flutter build apk     # Android 빌드
+flutter build ios     # iOS 빌드
+```
+
+---
+
+## DB 스키마
+
+Source of truth: `supabase/migrations/`
+
+| 테이블 | 설명 |
+|--------|------|
+| `user_profiles` | 사용자 프로필 + AI 셰프 설정 |
+| `ingredients` | 재료 (location: fridge/freezer/pantry) |
+| `cooking_tools` | 요리 도구 |
+| `recipes` | AI 생성 레시피 |
+| `cooking_history` | 조리 이력 |
+| `chat_sessions` | AI 셰프 채팅 세션 |
+| `chat_messages` | 채팅 메시지 |
+
+---
+
+## AI 모델 비용
+
+| 용도 | 모델 | Input / Output (1M tokens) |
+|------|------|---------------------------|
+| 빠른 대화, 이미지 분석 | Gemini 2.5 Flash | $0.30 / $2.50 |
+| 레시피 생성 | Gemini 2.5 Pro | $1.25 / $10.00 |
+
 ---
 
 ## 라이선스
 
 MIT License
-
----
-
-## 연락처
-
-- 프로젝트 문의: [이메일 주소]
-- 버그 리포트: GitHub Issues
