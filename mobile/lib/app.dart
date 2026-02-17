@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'screens/login_screen.dart';
-import 'screens/home_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
+import 'screens/main_shell.dart';
+import 'screens/tabs/home_tab.dart';
+import 'screens/tabs/recipe_tab.dart';
+import 'screens/tabs/refrigerator_tab.dart';
+import 'screens/tabs/profile_tab.dart';
 
 /// 앱 라우터 Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -40,12 +44,53 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
-        path: '/',
-        builder: (context, state) => const HomeScreen(),
-      ),
-      GoRoute(
         path: '/camera',
         builder: (context, state) => const CameraScreen(),
+      ),
+
+      // 메인 4탭 네비게이션
+      StatefulShellRoute.indexedStack(
+        builder: (context, state, navigationShell) {
+          return MainShell(navigationShell: navigationShell);
+        },
+        branches: [
+          // 홈 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (context, state) => const HomeTab(),
+              ),
+            ],
+          ),
+          // 레시피 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/recipe',
+                builder: (context, state) => const RecipeTab(),
+              ),
+            ],
+          ),
+          // 냉장고 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/refrigerator',
+                builder: (context, state) => const RefrigeratorTab(),
+              ),
+            ],
+          ),
+          // 프로필 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/profile',
+                builder: (context, state) => const ProfileTab(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
   );
