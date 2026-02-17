@@ -27,7 +27,7 @@ class Ingredient {
     this.purchaseDate,
     required this.expiryDate,
     this.price,
-    this.storageLocation = StorageLocation.refrigerated,
+    this.storageLocation = StorageLocation.refrigerator,
     this.memo,
     this.createdAt,
     this.updatedAt,
@@ -127,15 +127,23 @@ class Ingredient {
     if (days < 0) return ExpiryStatus.expired;
     if (days <= 3) return ExpiryStatus.critical;
     if (days <= 7) return ExpiryStatus.warning;
-    return ExpiryStatus.ok;
+    return ExpiryStatus.safe;
+  }
+
+  /// D-Day 문자열 (예: "D-3", "D-Day", "D+2")
+  String get dDayString {
+    final days = daysUntilExpiry;
+    if (days == 0) return 'D-Day';
+    if (days > 0) return 'D-$days';
+    return 'D+${-days}';
   }
 }
 
 /// 보관 위치
 enum StorageLocation {
-  refrigerated('refrigerated', '냉장'),
-  frozen('frozen', '냉동'),
-  roomTemp('room_temp', '실온');
+  refrigerator('refrigerator', '냉장'),
+  freezer('freezer', '냉동'),
+  pantry('pantry', '실온');
 
   final String value;
   final String displayName;
@@ -143,10 +151,16 @@ enum StorageLocation {
   const StorageLocation(this.value, this.displayName);
 
   static StorageLocation fromString(String value) {
-    return StorageLocation.values.firstWhere(
-      (e) => e.value == value,
-      orElse: () => StorageLocation.refrigerated,
-    );
+    // 이전 값들과 호환성 유지
+    final mapping = {
+      'refrigerated': StorageLocation.refrigerator,
+      'frozen': StorageLocation.freezer,
+      'room_temp': StorageLocation.pantry,
+      'refrigerator': StorageLocation.refrigerator,
+      'freezer': StorageLocation.freezer,
+      'pantry': StorageLocation.pantry,
+    };
+    return mapping[value] ?? StorageLocation.refrigerator;
   }
 }
 
@@ -174,11 +188,32 @@ enum ExpiryStatus {
   expired('만료됨'),
   critical('3일 이내'),
   warning('7일 이내'),
-  ok('양호');
+  safe('양호');
 
   final String displayName;
 
   const ExpiryStatus(this.displayName);
+}
+
+/// 유통기한 그룹
+class ExpiryIngredientGroup {
+  final List<Ingredient> expiredItems;
+  final List<Ingredient> criticalItems;
+  final List<Ingredient> warningItems;
+  final List<Ingredient> safeItems;
+
+  ExpiryIngredientGroup({
+    required this.expiredItems,
+    required this.criticalItems,
+    required this.warningItems,
+    required this.safeItems,
+  });
+
+  int get expiredCount => expiredItems.length;
+  int get criticalCount => criticalItems.length;
+  int get warningCount => warningItems.length;
+  int get safeCount => safeItems.length;
+  int get totalCount => expiredCount + criticalCount + warningCount + safeCount;
 }
 
 /// OCR 결과 모델
@@ -247,17 +282,17 @@ class ReceiptOcrResult {
   /// 카테고리별 기본 보관 위치
   static StorageLocation _getStorageLocation(String category) {
     const locationMap = {
-      'produce': StorageLocation.refrigerated,
-      'dairy': StorageLocation.refrigerated,
-      'meat': StorageLocation.refrigerated,
-      'seafood': StorageLocation.refrigerated,
-      'pantry': StorageLocation.roomTemp,
-      'frozen': StorageLocation.frozen,
-      'beverages': StorageLocation.roomTemp,
-      'bakery': StorageLocation.roomTemp,
-      'condiments': StorageLocation.refrigerated,
-      'other': StorageLocation.refrigerated,
+      'produce': StorageLocation.refrigerator,
+      'dairy': StorageLocation.refrigerator,
+      'meat': StorageLocation.refrigerator,
+      'seafood': StorageLocation.refrigerator,
+      'pantry': StorageLocation.pantry,
+      'frozen': StorageLocation.freezer,
+      'beverages': StorageLocation.pantry,
+      'bakery': StorageLocation.pantry,
+      'condiments': StorageLocation.refrigerator,
+      'other': StorageLocation.refrigerator,
     };
-    return locationMap[category] ?? StorageLocation.refrigerated;
+    return locationMap[category] ?? StorageLocation.refrigerator;
   }
 }

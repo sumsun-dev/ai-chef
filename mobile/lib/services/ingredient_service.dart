@@ -92,8 +92,9 @@ class IngredientService {
   }
 
   /// 재료 삭제
-  Future<void> deleteIngredient(String id) async {
+  Future<void> deleteIngredient(String? id) async {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
+    if (id == null) throw Exception('재료 ID가 필요합니다.');
 
     await _supabase
         .from('ingredients')
@@ -188,5 +189,44 @@ class IngredientService {
     return (response as List)
         .map((item) => Ingredient.fromJson(item))
         .toList();
+  }
+
+  /// 사용자의 모든 재료 조회 (별칭)
+  Future<List<Ingredient>> getUserIngredients() async {
+    return getIngredients();
+  }
+
+  /// 유통기한 그룹별 재료 조회
+  Future<ExpiryIngredientGroup> getExpiryIngredientGroup() async {
+    final ingredients = await getIngredients();
+
+    final expired = <Ingredient>[];
+    final critical = <Ingredient>[];
+    final warning = <Ingredient>[];
+    final safe = <Ingredient>[];
+
+    for (final item in ingredients) {
+      switch (item.expiryStatus) {
+        case ExpiryStatus.expired:
+          expired.add(item);
+          break;
+        case ExpiryStatus.critical:
+          critical.add(item);
+          break;
+        case ExpiryStatus.warning:
+          warning.add(item);
+          break;
+        case ExpiryStatus.safe:
+          safe.add(item);
+          break;
+      }
+    }
+
+    return ExpiryIngredientGroup(
+      expiredItems: expired,
+      criticalItems: critical,
+      warningItems: warning,
+      safeItems: safe,
+    );
   }
 }

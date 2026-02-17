@@ -430,11 +430,11 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
 
   IconData _getStorageIcon(StorageLocation location) {
     switch (location) {
-      case StorageLocation.refrigerated:
+      case StorageLocation.refrigerator:
         return Icons.kitchen_outlined;
-      case StorageLocation.frozen:
+      case StorageLocation.freezer:
         return Icons.ac_unit;
-      case StorageLocation.roomTemp:
+      case StorageLocation.pantry:
         return Icons.home_outlined;
     }
   }
