@@ -4,10 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/ingredient.dart';
+import 'models/recipe.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/ingredient_add_screen.dart';
+import 'screens/recipe_detail_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
@@ -56,6 +58,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final ingredient = state.extra as Ingredient?;
           return IngredientAddScreen(ingredient: ingredient);
+        },
+      ),
+      GoRoute(
+        path: '/recipe/detail',
+        builder: (context, state) {
+          final recipe = state.extra as Recipe;
+          return RecipeDetailScreen(recipe: recipe);
         },
       ),
 

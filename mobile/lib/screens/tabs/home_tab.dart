@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../models/chef.dart';
 import '../../models/ingredient.dart';
 import '../../services/auth_service.dart';
@@ -209,9 +210,7 @@ class _HomeTabState extends State<HomeTab> {
           child: _buildQuickActionCard(
             icon: '🍚',
             label: '혼밥',
-            onTap: () {
-              // TODO: 혼밥 레시피 추천
-            },
+            onTap: () => context.go('/recipe'),
           ),
         ),
         const SizedBox(width: 12),
@@ -219,9 +218,7 @@ class _HomeTabState extends State<HomeTab> {
           child: _buildQuickActionCard(
             icon: '⚡',
             label: '급해요',
-            onTap: () {
-              // TODO: 빠른 레시피 추천
-            },
+            onTap: () => context.go('/recipe'),
           ),
         ),
         const SizedBox(width: 12),
@@ -229,9 +226,7 @@ class _HomeTabState extends State<HomeTab> {
           child: _buildQuickActionCard(
             icon: '🥬',
             label: '재료정리',
-            onTap: () {
-              // TODO: 유통기한 임박 재료로 레시피
-            },
+            onTap: () => context.go('/recipe'),
           ),
         ),
       ],
