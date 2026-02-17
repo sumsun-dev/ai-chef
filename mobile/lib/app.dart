@@ -3,9 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'models/ingredient.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
+import 'screens/ingredient_add_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
@@ -20,8 +22,6 @@ final routerProvider = Provider<GoRouter>((ref) {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
       final isLoginRoute = state.matchedLocation == '/login';
-      final isOnboardingRoute = state.matchedLocation == '/onboarding';
-
       // 로그인 안 됨 -> 로그인 페이지로
       if (!isLoggedIn && !isLoginRoute) {
         return '/login';
@@ -46,6 +46,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/camera',
         builder: (context, state) => const CameraScreen(),
+      ),
+      GoRoute(
+        path: '/ingredient/add',
+        builder: (context, state) => const IngredientAddScreen(),
+      ),
+      GoRoute(
+        path: '/ingredient/edit',
+        builder: (context, state) {
+          final ingredient = state.extra as Ingredient?;
+          return IngredientAddScreen(ingredient: ingredient);
+        },
       ),
 
       // 메인 4탭 네비게이션
