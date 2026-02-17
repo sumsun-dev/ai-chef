@@ -88,15 +88,14 @@ class ReceiptOcrService {
 ```
 
 ## 카테고리 목록
-- produce: 채소, 과일
-- dairy: 유제품 (우유, 치즈, 요거트)
+- vegetable: 채소 (양파, 당근, 배추 등)
+- fruit: 과일 (사과, 바나나, 딸기 등)
 - meat: 육류 (소고기, 돼지고기, 닭고기)
 - seafood: 해산물, 생선
-- pantry: 건조식품, 통조림, 면류, 쌀
-- frozen: 냉동식품
-- beverages: 음료, 주류
-- bakery: 빵, 과자
-- condiments: 소스, 양념, 조미료
+- dairy: 유제품 (우유, 치즈, 요거트)
+- egg: 달걀, 메추리알
+- grain: 곡류, 건조식품, 통조림, 면류, 쌀
+- seasoning: 소스, 양념, 조미료
 - other: 기타 식품
 
 ## 주의사항

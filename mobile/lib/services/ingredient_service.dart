@@ -167,7 +167,7 @@ class IngredientService {
         .from('ingredients')
         .select()
         .eq('user_id', _userId!)
-        .eq('storage_location', location.value)
+        .eq('location', location.value)
         .order('expiry_date', ascending: true);
 
     return (response as List)

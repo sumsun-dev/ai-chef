@@ -1,5 +1,7 @@
 -- =====================================================
--- AI Chef - Supabase Database Schema
+-- [LEGACY] AI Chef - Supabase Database Schema
+-- 이 파일은 초기 설계 문서입니다.
+-- 실제 적용 스키마는 supabase/migrations/ 를 참조하세요.
 -- Version: 1.0
 -- Date: 2026-01-17
 -- =====================================================

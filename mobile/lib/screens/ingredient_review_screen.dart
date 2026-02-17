@@ -425,15 +425,14 @@ class _IngredientCard extends StatelessWidget {
 
   String _getCategoryDisplayName(String category) {
     const categoryNames = {
-      'produce': '채소/과일',
-      'dairy': '유제품',
+      'vegetable': '채소',
+      'fruit': '과일',
       'meat': '육류',
       'seafood': '해산물',
-      'pantry': '건조식품',
-      'frozen': '냉동',
-      'beverages': '음료',
-      'bakery': '빵/과자',
-      'condiments': '양념',
+      'dairy': '유제품',
+      'egg': '달걀',
+      'grain': '곡류',
+      'seasoning': '양념',
       'other': '기타',
     };
     return categoryNames[category] ?? '기타';
@@ -460,15 +459,14 @@ class _IngredientEditSheetState extends State<_IngredientEditSheet> {
 
   final List<String> _units = ['개', 'g', 'kg', 'ml', 'L', '팩', '봉', '병', '캔'];
   final Map<String, String> _categories = {
-    'produce': '채소/과일',
-    'dairy': '유제품',
+    'vegetable': '채소',
+    'fruit': '과일',
     'meat': '육류',
     'seafood': '해산물',
-    'pantry': '건조식품',
-    'frozen': '냉동',
-    'beverages': '음료',
-    'bakery': '빵/과자',
-    'condiments': '양념',
+    'dairy': '유제품',
+    'egg': '달걀',
+    'grain': '곡류',
+    'seasoning': '양념',
     'other': '기타',
   };
 

@@ -40,7 +40,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
     return _ingredients.where((i) {
       switch (_selectedLocation) {
         case 'fridge':
-          return i.storageLocation == StorageLocation.refrigerator;
+          return i.storageLocation == StorageLocation.fridge;
         case 'freezer':
           return i.storageLocation == StorageLocation.freezer;
         case 'pantry':
