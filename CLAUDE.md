@@ -27,12 +27,6 @@ ai-chef/
 └── docs/             # Docs (PRD, schema, cost estimation)
 ```
 
-## Code Style
-- **Immutability**: no direct mutation, use spread operator
-- **File size**: 200-400 lines recommended, max 800
-- **Nesting**: max 4 levels
-- **console.log**: remove from production code
-
 ## Type Safety
 - Explicit types on all functions
 - No `any` type, use `unknown` when needed
@@ -83,16 +77,19 @@ NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_ANON_KEY=
 ```
 
-## Commands (Web)
+## Commands (Allowed)
+
+### Web
 ```bash
 pnpm dev              # Dev server (port 3000)
 pnpm build            # Production build
 pnpm lint             # ESLint
+pnpm test             # Run tests
 pnpm remotion:studio  # Remotion video editor
 pnpm remotion:render  # Render intro video
 ```
 
-## Commands (Mobile)
+### Mobile
 ```bash
 flutter run           # Run on device/emulator
 flutter build apk     # Android build
