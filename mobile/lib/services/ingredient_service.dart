@@ -5,7 +5,10 @@ import '../models/ingredient.dart';
 /// 재료 관리 서비스
 /// Supabase를 통한 재료 CRUD 처리
 class IngredientService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  IngredientService({SupabaseClient? supabase})
+      : _supabase = supabase ?? Supabase.instance.client;
 
   /// 현재 사용자 ID
   String? get _userId => _supabase.auth.currentUser?.id;

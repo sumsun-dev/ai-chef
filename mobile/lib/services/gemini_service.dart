@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../models/models.dart';
@@ -10,10 +11,10 @@ import '../models/models.dart';
 /// - gemini-3.0-flash: 빠른 대화용
 /// - gemini-3.0-pro: 복잡한 레시피 생성용
 class GeminiService {
-  late final String _apiKey;
+  final String _apiKey;
 
-  GeminiService() {
-    _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+  GeminiService({String? apiKey})
+      : _apiKey = apiKey ?? dotenv.env['GEMINI_API_KEY'] ?? '' {
     if (_apiKey.isEmpty) {
       throw Exception('GEMINI_API_KEY가 설정되지 않았습니다.');
     }
@@ -28,7 +29,8 @@ class GeminiService {
   ];
 
   /// 성격별 프롬프트 생성
-  String _getPersonalityPrompt(ChefPersonality personality, String? customPersonality) {
+  @visibleForTesting
+  String getPersonalityPrompt(ChefPersonality personality, String? customPersonality) {
     const personalities = {
       ChefPersonality.professional:
           '정확하고 전문적인 설명을 제공합니다. 요리 용어를 정확히 사용하고, 체계적으로 안내합니다.',
@@ -49,7 +51,8 @@ class GeminiService {
   }
 
   /// 말투 스타일 프롬프트 생성
-  String _getSpeakingStylePrompt(SpeakingStyle style) {
+  @visibleForTesting
+  String getSpeakingStylePrompt(SpeakingStyle style) {
     final formality =
         style.formality == Formality.formal ? '존댓말을 사용합니다.' : '반말을 사용합니다.';
 
@@ -70,15 +73,16 @@ class GeminiService {
   }
 
   /// AI 셰프 시스템 프롬프트 생성
-  String _generateSystemPrompt(AIChefConfig config) {
+  @visibleForTesting
+  String generateSystemPrompt(AIChefConfig config) {
     return '''당신의 이름은 "${config.name}"입니다.
 당신은 ${config.expertise.join(", ")} 요리를 전문으로 하는 AI 셰프입니다.
 
 ## 성격
-${_getPersonalityPrompt(config.personality, config.customPersonality)}
+${getPersonalityPrompt(config.personality, config.customPersonality)}
 
 ## 말투 스타일
-${_getSpeakingStylePrompt(config.speakingStyle)}
+${getSpeakingStylePrompt(config.speakingStyle)}
 
 ## 요리 철학
 ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 있도록 돕습니다."}
@@ -99,7 +103,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
     List<String>? ingredients,
     List<String>? tools,
   }) async {
-    final systemPrompt = _generateSystemPrompt(chefConfig);
+    final systemPrompt = generateSystemPrompt(chefConfig);
 
     // systemInstruction으로 셰프 역할 설정
     final chatModel = GenerativeModel(
@@ -133,7 +137,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
     int? cookingTime,
     int servings = 1,
   }) async {
-    final systemPrompt = _generateSystemPrompt(chefConfig);
+    final systemPrompt = generateSystemPrompt(chefConfig);
 
     final prompt = '''## 사용자 정보
 - 보유 재료: ${ingredients.join(", ")}
@@ -225,7 +229,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
     String? currentStep,
     String? recipeName,
   }) async {
-    final systemPrompt = _generateSystemPrompt(chefConfig);
+    final systemPrompt = generateSystemPrompt(chefConfig);
 
     String contextInfo = '';
     if (recipeName != null) {

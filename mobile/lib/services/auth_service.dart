@@ -8,18 +8,18 @@ import '../models/onboarding_state.dart';
 /// 인증 서비스
 /// Google 로그인 및 Supabase 인증 관리
 class AuthService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+  final GoogleSignIn _googleSignIn;
 
-  late final GoogleSignIn _googleSignIn;
-
-  AuthService() {
-    final clientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
-    _googleSignIn = GoogleSignIn(
-      clientId: kIsWeb ? clientId : null,
-      serverClientId: kIsWeb ? null : clientId,
-      scopes: ['email', 'profile'],
-    );
-  }
+  AuthService({SupabaseClient? supabase, GoogleSignIn? googleSignIn})
+      : _supabase = supabase ?? Supabase.instance.client,
+        _googleSignIn = googleSignIn ??
+            GoogleSignIn(
+              clientId: kIsWeb ? dotenv.env['GOOGLE_WEB_CLIENT_ID'] : null,
+              serverClientId:
+                  kIsWeb ? null : dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+              scopes: ['email', 'profile'],
+            );
 
   /// 현재 사용자 가져오기
   User? get currentUser => _supabase.auth.currentUser;

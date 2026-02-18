@@ -4,7 +4,10 @@ import '../models/chat_message.dart';
 
 /// 채팅 메시지 DB 서비스
 class ChatService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  ChatService({SupabaseClient? supabase})
+      : _supabase = supabase ?? Supabase.instance.client;
 
   String? get _userId => _supabase.auth.currentUser?.id;
 

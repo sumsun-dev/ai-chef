@@ -14,6 +14,7 @@ import 'screens/recipe_detail_screen.dart';
 import 'screens/profile/chef_selection_screen.dart';
 import 'screens/profile/cooking_tools_screen.dart';
 import 'screens/profile/profile_edit_screen.dart';
+import 'screens/expiry_alert_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
@@ -77,6 +78,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final initialMessage = state.extra as String?;
           return ChatScreen(initialMessage: initialMessage);
         },
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const ExpiryAlertScreen(),
       ),
       GoRoute(
         path: '/profile/chef-selection',

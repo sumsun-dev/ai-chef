@@ -4,7 +4,10 @@ import '../models/recipe.dart';
 
 /// 레시피 저장/북마크/기록 DB 서비스
 class RecipeService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase;
+
+  RecipeService({SupabaseClient? supabase})
+      : _supabase = supabase ?? Supabase.instance.client;
 
   String? get _userId => _supabase.auth.currentUser?.id;
 

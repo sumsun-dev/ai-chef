@@ -73,9 +73,7 @@ class _HomeTabState extends State<HomeTab> {
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              // TODO: 알림 화면
-            },
+            onPressed: () => context.push('/notifications'),
           ),
         ],
       ),
