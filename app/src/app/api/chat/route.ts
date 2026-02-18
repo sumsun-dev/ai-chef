@@ -1,32 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import { sendMessage, AIChefConfig } from "@/lib/gemini";
+import { sendMessage } from "@/lib/gemini";
+import { chatRequestSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { message, chefConfig, context } = body as {
-      message: string;
-      chefConfig: AIChefConfig;
-      context?: {
-        ingredients?: string[];
-        tools?: string[];
-      };
-    };
+    const result = chatRequestSchema.safeParse(body);
 
-    if (!message) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: "메시지를 입력해주세요." },
+        { error: "잘못된 요청입니다.", details: result.error.issues },
         { status: 400 }
       );
     }
 
-    if (!chefConfig) {
-      return NextResponse.json(
-        { error: "AI 셰프 설정이 필요합니다." },
-        { status: 400 }
-      );
-    }
-
+    const { message, chefConfig, context } = result.data;
     const response = await sendMessage(message, chefConfig, context);
 
     return NextResponse.json({ response });

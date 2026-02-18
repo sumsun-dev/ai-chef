@@ -1,37 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateRecipe, AIChefConfig } from "@/lib/gemini";
+import { generateRecipe } from "@/lib/gemini";
+import { recipeRequestSchema } from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { ingredients, tools, preferences, chefConfig } = body as {
-      ingredients: string[];
-      tools: string[];
-      preferences: {
-        cuisine?: string;
-        difficulty?: "easy" | "medium" | "hard";
-        cookingTime?: number;
-        servings?: number;
-      };
-      chefConfig: AIChefConfig;
-    };
+    const result = recipeRequestSchema.safeParse(body);
 
-    if (!ingredients?.length) {
+    if (!result.success) {
       return NextResponse.json(
-        { error: "재료를 입력해주세요." },
+        { error: "잘못된 요청입니다.", details: result.error.issues },
         { status: 400 }
       );
     }
 
-    if (!chefConfig) {
-      return NextResponse.json(
-        { error: "AI 셰프 설정이 필요합니다." },
-        { status: 400 }
-      );
-    }
-
+    const { ingredients, tools, preferences, chefConfig } = result.data;
     const recipe = await generateRecipe(
-      { ingredients, tools: tools || [], preferences: preferences || {} },
+      { ingredients, tools, preferences },
       chefConfig
     );
 
