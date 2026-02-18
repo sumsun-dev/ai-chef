@@ -61,103 +61,115 @@ class _StepFirstFridgeState extends State<StepFirstFridge> {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 32),
-          Text(
-            '냉장고에\n뭐가 있나요?',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 32),
+                Text(
+                  '냉장고에\n뭐가 있나요?',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '간단하게 등록하거나 나중에 추가할 수 있어요',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // 입력 영역
+                Row(
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(
+                          hintText: '재료 이름',
+                          border: OutlineInputBorder(),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        onSubmitted: (_) => _addIngredient(),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      flex: 2,
+                      child: DropdownButtonFormField<String>(
+                        initialValue: _selectedCategory,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding:
+                              EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                        ),
+                        items: _categories.entries.map((e) {
+                          return DropdownMenuItem(
+                              value: e.key, child: Text(e.value));
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() => _selectedCategory = value);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filled(
+                      onPressed: _addIngredient,
+                      icon: const Icon(Icons.add),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
           ),
-          const SizedBox(height: 8),
-          Text(
-            '간단하게 등록하거나 나중에 추가할 수 있어요',
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
 
-          // 입력 영역
-          Row(
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    hintText: '재료 이름',
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  onSubmitted: (_) => _addIngredient(),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedCategory,
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding:
-                        EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  ),
-                  items: _categories.entries.map((e) {
-                    return DropdownMenuItem(value: e.key, child: Text(e.value));
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedCategory = value);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              IconButton.filled(
-                onPressed: _addIngredient,
-                icon: const Icon(Icons.add),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          // 추가된 재료 목록
+          // 추가된 재료 목록 또는 빈 상태
           if (widget.ingredients.isNotEmpty) ...[
-            Text(
-              '추가된 재료 (${widget.ingredients.length}개)',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                color: colorScheme.onSurfaceVariant,
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  '추가된 재료 (${widget.ingredients.length}개)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
               ),
             ),
-            const SizedBox(height: 8),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: List.generate(widget.ingredients.length, (index) {
-                    final item = widget.ingredients[index];
-                    final emoji = _categories[item.category]?.split(' ')[0] ?? '📦';
-                    return Chip(
-                      label: Text('$emoji ${item.name}'),
-                      deleteIcon: const Icon(Icons.close, size: 18),
-                      onDeleted: () => _removeIngredient(index),
-                    );
-                  }),
-                ),
+            SliverToBoxAdapter(
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children:
+                    List.generate(widget.ingredients.length, (index) {
+                  final item = widget.ingredients[index];
+                  final emoji =
+                      _categories[item.category]?.split(' ')[0] ?? '📦';
+                  return Chip(
+                    label: Text('$emoji ${item.name}'),
+                    deleteIcon: const Icon(Icons.close, size: 18),
+                    onDeleted: () => _removeIngredient(index),
+                  );
+                }),
               ),
             ),
           ] else
-            Expanded(
+            SliverFillRemaining(
+              hasScrollBody: false,
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -165,7 +177,8 @@ class _StepFirstFridgeState extends State<StepFirstFridge> {
                     Icon(
                       Icons.kitchen,
                       size: 64,
-                      color: colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                      color:
+                          colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
                     ),
                     const SizedBox(height: 16),
                     Text(
@@ -179,6 +192,8 @@ class _StepFirstFridgeState extends State<StepFirstFridge> {
                 ),
               ),
             ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
         ],
       ),
     );

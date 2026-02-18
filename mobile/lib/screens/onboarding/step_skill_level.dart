@@ -22,7 +22,7 @@ class StepSkillLevel extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,6 +53,7 @@ class StepSkillLevel extends StatelessWidget {
               child: _buildSkillCard(context, level, isSelected),
             );
           }),
+          const SizedBox(height: 16),
         ],
       ),
     );

@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../models/onboarding_state.dart';
 import '../../services/auth_service.dart';
-import 'step_welcome.dart';
 import 'step_skill_level.dart';
 import 'step_scenarios.dart';
 import 'step_cooking_tools.dart';
@@ -13,7 +12,7 @@ import 'step_first_fridge.dart';
 import 'step_completion.dart';
 
 /// 온보딩 멀티스텝 화면 (7 페이지)
-/// Welcome → SkillLevel → Scenarios → CookingTools → Preferences → ChefSelection → FirstFridge+Completion
+/// SkillLevel → Scenarios → CookingTools → Preferences → ChefSelection → FirstFridge → Completion
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
@@ -27,9 +26,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   final AuthService _authService = AuthService();
 
   int _currentPage = 0;
-  bool _isLoading = false;
 
-  static const _totalPages = 8;
+  static const _totalPages = 7;
 
   void _nextPage() {
     if (_currentPage < _totalPages - 1) {
@@ -51,50 +49,32 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   bool get _canProceed {
     switch (_currentPage) {
-      case 0: // Welcome - 항상 가능 (버튼에서 직접 호출)
-        return true;
-      case 1: // SkillLevel
+      case 0: // SkillLevel
         return _state.skillLevel.isNotEmpty;
-      case 2: // Scenarios
+      case 1: // Scenarios
         return _state.scenarios.isNotEmpty;
-      case 3: // CookingTools - 항상 가능
+      case 2: // CookingTools - 항상 가능
         return true;
-      case 4: // Preferences
+      case 3: // Preferences
         return _state.timePreference.isNotEmpty &&
             _state.budgetPreference.isNotEmpty;
-      case 5: // ChefSelection
+      case 4: // ChefSelection
         return _state.chefName.isNotEmpty;
-      case 6: // FirstFridge - 항상 가능 (스킵 가능)
+      case 5: // FirstFridge - 항상 가능 (스킵 가능)
         return true;
-      case 7: // Completion
+      case 6: // Completion
         return true;
       default:
         return false;
     }
   }
 
-  Future<void> _completeOnboarding() async {
-    setState(() => _isLoading = true);
-
+  Future<bool> _saveOnboardingData() async {
     try {
       await _authService.saveOnboardingData(_state);
-
-      if (mounted) {
-        context.go('/');
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('저장 실패: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      return true;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -107,14 +87,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final isWelcomePage = _currentPage == 0;
     final isCompletionPage = _currentPage == _totalPages - 1;
+    final stepsCount = _totalPages - 1; // Completion 제외한 스텝 수
 
     return Scaffold(
       body: Column(
         children: [
-          // Progress indicator (Welcome, Completion 제외)
-          if (!isWelcomePage && !isCompletionPage)
+          // Progress indicator (Completion 제외)
+          if (!isCompletionPage)
             SafeArea(
               bottom: false,
               child: Padding(
@@ -127,11 +107,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         // 뒤로가기
                         IconButton(
                           icon: const Icon(Icons.arrow_back),
-                          onPressed: _previousPage,
+                          onPressed: _currentPage > 0 ? _previousPage : null,
                         ),
                         Expanded(
                           child: LinearProgressIndicator(
-                            value: (_currentPage) / (_totalPages - 2),
+                            value: (_currentPage + 1) / stepsCount,
                             backgroundColor:
                                 colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(4),
@@ -139,6 +119,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         ),
                         const SizedBox(width: 48), // 대칭 여백
                       ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${_currentPage + 1} / $stepsCount',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -152,30 +140,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               physics: const NeverScrollableScrollPhysics(),
               onPageChanged: (page) => setState(() => _currentPage = page),
               children: [
-                // 0: Welcome
-                StepWelcome(onNext: _nextPage),
-
-                // 1: SkillLevel
+                // 0: SkillLevel
                 StepSkillLevel(
                   selectedLevel: _state.skillLevel,
                   onChanged: (level) =>
                       setState(() => _state.skillLevel = level),
                 ),
 
-                // 2: Scenarios
+                // 1: Scenarios
                 StepScenarios(
                   selectedScenarios: _state.scenarios,
                   onChanged: (scenarios) =>
                       setState(() => _state.scenarios = scenarios),
                 ),
 
-                // 3: CookingTools
+                // 2: CookingTools
                 StepCookingTools(
                   tools: _state.tools,
                   onChanged: (tools) => setState(() => _state.tools = tools),
                 ),
 
-                // 4: Preferences
+                // 3: Preferences
                 StepPreferences(
                   timePreference: _state.timePreference,
                   budgetPreference: _state.budgetPreference,
@@ -185,7 +170,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       setState(() => _state.budgetPreference = b),
                 ),
 
-                // 5: ChefSelection
+                // 4: ChefSelection
                 StepChefSelection(
                   selectedPresetId: _state.selectedPresetId,
                   chefName: _state.chefName,
@@ -215,25 +200,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                 ),
 
-                // 6: FirstFridge
+                // 5: FirstFridge
                 StepFirstFridge(
                   ingredients: _state.firstIngredients,
                   onChanged: (ingredients) =>
                       setState(() => _state.firstIngredients = ingredients),
                 ),
 
-                // 7: Completion
+                // 6: Completion
                 StepCompletion(
                   chefName: _state.chefName,
-                  isLoading: _isLoading,
-                  onComplete: _completeOnboarding,
+                  onSave: _saveOnboardingData,
+                  onGoHome: () {
+                    if (mounted) context.go('/');
+                  },
                 ),
               ],
             ),
           ),
 
-          // 하단 버튼 (Welcome, Completion 제외)
-          if (!isWelcomePage && !isCompletionPage)
+          // 하단 버튼 (Completion 제외)
+          if (!isCompletionPage)
             SafeArea(
               top: false,
               child: Padding(
