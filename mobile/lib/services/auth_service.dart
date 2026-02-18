@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../models/onboarding_state.dart';
 
 /// 인증 서비스
 /// Google 로그인 및 Supabase 인증 관리
@@ -10,8 +13,10 @@ class AuthService {
   late final GoogleSignIn _googleSignIn;
 
   AuthService() {
+    final clientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
     _googleSignIn = GoogleSignIn(
-      serverClientId: dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+      clientId: kIsWeb ? clientId : null,
+      serverClientId: kIsWeb ? null : clientId,
       scopes: ['email', 'profile'],
     );
   }
@@ -101,5 +106,45 @@ class AuthService {
       'ai_chef_emoji_usage': emojiUsage,
       'ai_chef_technicality': technicality,
     });
+  }
+
+  /// 온보딩 전체 데이터 저장
+  Future<void> saveOnboardingData(OnboardingState state) async {
+    final user = currentUser;
+    if (user == null) throw Exception('로그인이 필요합니다.');
+
+    // 1. user_profiles 업데이트
+    await _supabase.from('user_profiles').update({
+      'skill_level': state.skillLevel,
+      'scenarios': state.scenarios,
+      'time_preference': state.timePreference,
+      'budget_preference': state.budgetPreference,
+      'ai_chef_name': state.chefName,
+      'ai_chef_personality': state.personality,
+      'ai_chef_expertise': state.expertise,
+      'ai_chef_formality': state.formality,
+      'ai_chef_emoji_usage': state.emojiUsage,
+      'ai_chef_technicality': state.technicality,
+    }).eq('id', user.id);
+
+    // 2. cooking_tools upsert
+    for (final entry in state.tools.entries) {
+      await _supabase.from('cooking_tools').upsert({
+        'user_id': user.id,
+        'tool_key': entry.key,
+        'tool_name': OnboardingState.toolKeyToName[entry.key] ?? entry.key,
+        'is_available': entry.value,
+      });
+    }
+
+    // 3. ingredients 등록 (첫 냉장고)
+    for (final ingredient in state.firstIngredients) {
+      await _supabase.from('ingredients').insert({
+        'user_id': user.id,
+        'name': ingredient.name,
+        'category': ingredient.category,
+        'location': 'fridge',
+      });
+    }
   }
 }

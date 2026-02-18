@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'models/ingredient.dart';
 import 'models/recipe.dart';
 import 'screens/login_screen.dart';
-import 'screens/onboarding_screen.dart';
+import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/ingredient_add_screen.dart';
 import 'screens/chat_screen.dart';
