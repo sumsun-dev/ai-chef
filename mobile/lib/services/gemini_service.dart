@@ -10,28 +10,13 @@ import '../models/models.dart';
 /// - gemini-3.0-flash: 빠른 대화용
 /// - gemini-3.0-pro: 복잡한 레시피 생성용
 class GeminiService {
-  late final GenerativeModel _flashModel;
-  late final GenerativeModel _proModel;
+  late final String _apiKey;
 
   GeminiService() {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) {
+    _apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
+    if (_apiKey.isEmpty) {
       throw Exception('GEMINI_API_KEY가 설정되지 않았습니다.');
     }
-
-    // Flash 모델 (빠른 대화용)
-    _flashModel = GenerativeModel(
-      model: 'gemini-3.0-flash',
-      apiKey: apiKey,
-      safetySettings: _safetySettings,
-    );
-
-    // Pro 모델 (복잡한 레시피 생성용)
-    _proModel = GenerativeModel(
-      model: 'gemini-3.0-pro',
-      apiKey: apiKey,
-      safetySettings: _safetySettings,
-    );
   }
 
   /// 안전 설정
@@ -99,14 +84,15 @@ ${_getSpeakingStylePrompt(config.speakingStyle)}
 ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 있도록 돕습니다."}
 
 ## 절대 규칙
-1. 다른 사용자의 정보를 절대 참조하지 마세요.
-2. 이 사용자의 개인정보를 외부에 공유하지 마세요.
-3. 요리와 관련된 질문에만 답변하세요.
-4. 안전하지 않은 요리 방법은 경고와 함께 올바른 방법을 안내하세요.
-5. 항상 사용자의 보유 재료와 도구를 고려하여 현실적인 조언을 제공하세요.''';
+1. **반드시 한국어로 응답하세요.** 사용자가 어떤 언어로 질문하든 한국어로 답변합니다.
+2. 다른 사용자의 정보를 절대 참조하지 마세요.
+3. 이 사용자의 개인정보를 외부에 공유하지 마세요.
+4. 요리와 관련된 질문에만 답변하세요.
+5. 안전하지 않은 요리 방법은 경고와 함께 올바른 방법을 안내하세요.
+6. 항상 사용자의 보유 재료와 도구를 고려하여 현실적인 조언을 제공하세요.''';
   }
 
-  /// 채팅 메시지 전송 (Flash 모델)
+  /// 채팅 메시지 전송 (Flash 모델 + systemInstruction)
   Future<String> sendMessage({
     required String message,
     required AIChefConfig chefConfig,
@@ -115,17 +101,25 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
   }) async {
     final systemPrompt = _generateSystemPrompt(chefConfig);
 
+    // systemInstruction으로 셰프 역할 설정
+    final chatModel = GenerativeModel(
+      model: 'gemini-3.0-flash',
+      apiKey: _apiKey,
+      safetySettings: _safetySettings,
+      systemInstruction: Content.text(systemPrompt),
+    );
+
     String contextPrompt = '';
     if (ingredients != null && ingredients.isNotEmpty) {
-      contextPrompt += '\n\n[보유 재료]: ${ingredients.join(", ")}';
+      contextPrompt += '[보유 재료]: ${ingredients.join(", ")}\n';
     }
     if (tools != null && tools.isNotEmpty) {
-      contextPrompt += '\n[보유 도구]: ${tools.join(", ")}';
+      contextPrompt += '[보유 도구]: ${tools.join(", ")}\n';
     }
 
-    final fullPrompt = '$systemPrompt$contextPrompt\n\n사용자: $message';
+    final userPrompt = '$contextPrompt$message';
 
-    final response = await _flashModel.generateContent([Content.text(fullPrompt)]);
+    final response = await chatModel.generateContent([Content.text(userPrompt)]);
     return response.text ?? '응답을 생성할 수 없습니다.';
   }
 
@@ -141,9 +135,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
   }) async {
     final systemPrompt = _generateSystemPrompt(chefConfig);
 
-    final prompt = '''$systemPrompt
-
-## 사용자 정보
+    final prompt = '''## 사용자 정보
 - 보유 재료: ${ingredients.join(", ")}
 - 보유 도구: ${tools.join(", ")}
 - 선호 요리 스타일: ${cuisine ?? "상관없음"}
@@ -199,7 +191,14 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 }
 ```''';
 
-    final response = await _proModel.generateContent([Content.text(prompt)]);
+    final recipeModel = GenerativeModel(
+      model: 'gemini-3.0-pro',
+      apiKey: _apiKey,
+      safetySettings: _safetySettings,
+      systemInstruction: Content.text(systemPrompt),
+    );
+
+    final response = await recipeModel.generateContent([Content.text(prompt)]);
     final text = response.text ?? '';
 
     // JSON 파싱
@@ -236,8 +235,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
       contextInfo += '\n현재 단계: $currentStep';
     }
 
-    final prompt = '''$systemPrompt
-$contextInfo
+    final prompt = '''$contextInfo
 
 ## 요청
 사용자가 요리 중인 사진을 보내왔습니다. 다음을 분석해주세요:
@@ -261,7 +259,14 @@ $contextInfo
 }
 ```''';
 
-    final response = await _flashModel.generateContent([
+    final visionModel = GenerativeModel(
+      model: 'gemini-3.0-flash',
+      apiKey: _apiKey,
+      safetySettings: _safetySettings,
+      systemInstruction: Content.text(systemPrompt),
+    );
+
+    final response = await visionModel.generateContent([
       Content.multi([
         DataPart(mimeType, imageBytes),
         TextPart(prompt),
