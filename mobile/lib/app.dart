@@ -11,6 +11,9 @@ import 'screens/camera_screen.dart';
 import 'screens/ingredient_add_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/recipe_detail_screen.dart';
+import 'screens/profile/chef_selection_screen.dart';
+import 'screens/profile/cooking_tools_screen.dart';
+import 'screens/profile/profile_edit_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
@@ -74,6 +77,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           final initialMessage = state.extra as String?;
           return ChatScreen(initialMessage: initialMessage);
         },
+      ),
+      GoRoute(
+        path: '/profile/chef-selection',
+        builder: (context, state) => const ChefSelectionScreen(),
+      ),
+      GoRoute(
+        path: '/profile/cooking-tools',
+        builder: (context, state) => const CookingToolsScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const ProfileEditScreen(),
       ),
 
       // 메인 4탭 네비게이션

@@ -15,12 +15,36 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   final IngredientService _ingredientService = IngredientService();
   List<Ingredient> _ingredients = [];
   bool _isLoading = true;
-  String _selectedLocation = 'all'; // 'all', 'fridge', 'freezer', 'pantry'
+  String _selectedLocation = 'all';
+  String? _selectedCategory;
+  String _sortBy = 'expiry'; // 'expiry', 'name', 'category'
+  bool _isSearching = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
+
+  static const _categories = [
+    ('all', '전체'),
+    ('vegetable', '채소'),
+    ('fruit', '과일'),
+    ('meat', '고기'),
+    ('seafood', '해산물'),
+    ('dairy', '유제품'),
+    ('egg', '계란'),
+    ('grain', '곡류'),
+    ('seasoning', '양념'),
+    ('other', '기타'),
+  ];
 
   @override
   void initState() {
     super.initState();
     _loadIngredients();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadIngredients() async {
@@ -37,19 +61,50 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   }
 
   List<Ingredient> get _filteredIngredients {
-    if (_selectedLocation == 'all') return _ingredients;
-    return _ingredients.where((i) {
-      switch (_selectedLocation) {
-        case 'fridge':
-          return i.storageLocation == StorageLocation.fridge;
-        case 'freezer':
-          return i.storageLocation == StorageLocation.freezer;
-        case 'pantry':
-          return i.storageLocation == StorageLocation.pantry;
-        default:
-          return true;
-      }
-    }).toList();
+    var result = List<Ingredient>.from(_ingredients);
+
+    // 검색 필터
+    if (_searchQuery.isNotEmpty) {
+      result = result
+          .where((i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .toList();
+    }
+
+    // 위치 필터
+    if (_selectedLocation != 'all') {
+      result = result.where((i) {
+        switch (_selectedLocation) {
+          case 'fridge':
+            return i.storageLocation == StorageLocation.fridge;
+          case 'freezer':
+            return i.storageLocation == StorageLocation.freezer;
+          case 'pantry':
+            return i.storageLocation == StorageLocation.pantry;
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
+    // 카테고리 필터
+    if (_selectedCategory != null && _selectedCategory != 'all') {
+      result = result.where((i) => i.category == _selectedCategory).toList();
+    }
+
+    // 정렬
+    switch (_sortBy) {
+      case 'expiry':
+        result.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
+        break;
+      case 'name':
+        result.sort((a, b) => a.name.compareTo(b.name));
+        break;
+      case 'category':
+        result.sort((a, b) => a.category.compareTo(b.category));
+        break;
+    }
+
+    return result;
   }
 
   List<Ingredient> get _expiringIngredients {
@@ -66,13 +121,68 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('냉장고'),
+        title: _isSearching
+            ? TextField(
+                controller: _searchController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: '재료 검색...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) => setState(() => _searchQuery = value),
+              )
+            : const Text('냉장고'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.search),
+            icon: Icon(_isSearching ? Icons.close : Icons.search),
             onPressed: () {
-              // TODO: 재료 검색
+              setState(() {
+                _isSearching = !_isSearching;
+                if (!_isSearching) {
+                  _searchQuery = '';
+                  _searchController.clear();
+                }
+              });
             },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.sort),
+            onSelected: (value) => setState(() => _sortBy = value),
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'expiry',
+                child: Row(
+                  children: [
+                    if (_sortBy == 'expiry')
+                      Icon(Icons.check, size: 18, color: colorScheme.primary),
+                    if (_sortBy == 'expiry') const SizedBox(width: 8),
+                    const Text('유통기한순'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'name',
+                child: Row(
+                  children: [
+                    if (_sortBy == 'name')
+                      Icon(Icons.check, size: 18, color: colorScheme.primary),
+                    if (_sortBy == 'name') const SizedBox(width: 8),
+                    const Text('이름순'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'category',
+                child: Row(
+                  children: [
+                    if (_sortBy == 'category')
+                      Icon(Icons.check, size: 18, color: colorScheme.primary),
+                    if (_sortBy == 'category') const SizedBox(width: 8),
+                    const Text('카테고리순'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -91,6 +201,11 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                   // 위치 필터
                   SliverToBoxAdapter(
                     child: _buildLocationFilter(colorScheme),
+                  ),
+
+                  // 카테고리 필터
+                  SliverToBoxAdapter(
+                    child: _buildCategoryFilter(colorScheme),
                   ),
 
                   // 재료 목록
@@ -173,11 +288,11 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
         children: [
           _buildFilterChip('all', '전체', colorScheme),
           const SizedBox(width: 8),
-          _buildFilterChip('fridge', '🧊 냉장', colorScheme),
+          _buildFilterChip('fridge', '냉장', colorScheme),
           const SizedBox(width: 8),
-          _buildFilterChip('freezer', '❄️ 냉동', colorScheme),
+          _buildFilterChip('freezer', '냉동', colorScheme),
           const SizedBox(width: 8),
-          _buildFilterChip('pantry', '📦 실온', colorScheme),
+          _buildFilterChip('pantry', '실온', colorScheme),
         ],
       ),
     );
@@ -198,6 +313,36 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
     );
   }
 
+  Widget _buildCategoryFilter(ColorScheme colorScheme) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: _categories.map((entry) {
+          final (value, label) = entry;
+          final isSelected =
+              (_selectedCategory == null && value == 'all') ||
+              _selectedCategory == value;
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(label),
+              selected: isSelected,
+              onSelected: (selected) {
+                setState(() {
+                  _selectedCategory = selected && value != 'all' ? value : null;
+                });
+              },
+              selectedColor: colorScheme.secondaryContainer,
+              checkmarkColor: colorScheme.secondary,
+              labelStyle: TextStyle(fontSize: 12, color: isSelected ? colorScheme.secondary : null),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
   Widget _buildEmptyState() {
     return Center(
       child: Column(
@@ -210,7 +355,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
           ),
           const SizedBox(height: 16),
           Text(
-            '냉장고가 비어있어요',
+            _searchQuery.isNotEmpty ? '검색 결과가 없어요' : '냉장고가 비어있어요',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -219,7 +364,9 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
           ),
           const SizedBox(height: 8),
           Text(
-            '재료를 추가해서 맞춤 레시피를 받아보세요',
+            _searchQuery.isNotEmpty
+                ? '다른 키워드로 검색해 보세요'
+                : '재료를 추가해서 맞춤 레시피를 받아보세요',
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[500],
@@ -355,7 +502,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                         label: '사진으로\n인식',
                         onTap: () {
                           Navigator.pop(context);
-                          context.push('/camera');
+                          this.context.push('/camera');
                         },
                       ),
                     ),
@@ -367,7 +514,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                         onTap: () async {
                           Navigator.pop(context);
                           final result =
-                              await context.push<bool>('/ingredient/add');
+                              await this.context.push<bool>('/ingredient/add');
                           if (result == true) _loadIngredients();
                         },
                       ),

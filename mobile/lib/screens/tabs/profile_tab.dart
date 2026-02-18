@@ -104,22 +104,23 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 24),
 
           // 내 셰프
-          _buildSectionTitle('👨‍🍳 내 셰프'),
+          _buildSectionTitle('내 셰프'),
           Card(
             child: ListTile(
               leading: Text(chef.emoji, style: const TextStyle(fontSize: 32)),
               title: Text(chef.name),
               subtitle: Text(chef.title),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // TODO: 셰프 선택 화면
+              onTap: () async {
+                final result = await context.push<bool>('/profile/chef-selection');
+                if (result == true) _loadProfile();
               },
             ),
           ),
           const SizedBox(height: 16),
 
           // 요리 설정
-          _buildSectionTitle('🍳 요리 설정'),
+          _buildSectionTitle('요리 설정'),
           Card(
             child: Column(
               children: [
@@ -127,28 +128,40 @@ class _ProfileTabState extends State<ProfileTab> {
                   icon: Icons.star,
                   title: '요리 실력',
                   value: _getSkillLevelText(_profile?['skill_level']),
-                  onTap: () {},
+                  onTap: () async {
+                    final result = await context.push<bool>('/profile/edit');
+                    if (result == true) _loadProfile();
+                  },
                 ),
                 const Divider(height: 1),
                 _buildSettingTile(
                   icon: Icons.people,
                   title: '가구원 수',
                   value: '${_profile?['household_size'] ?? 1}명',
-                  onTap: () {},
+                  onTap: () async {
+                    final result = await context.push<bool>('/profile/edit');
+                    if (result == true) _loadProfile();
+                  },
                 ),
                 const Divider(height: 1),
                 _buildSettingTile(
                   icon: Icons.timer,
                   title: '선호 조리시간',
                   value: _getTimePreferenceText(_profile?['time_preference']),
-                  onTap: () {},
+                  onTap: () async {
+                    final result = await context.push<bool>('/profile/edit');
+                    if (result == true) _loadProfile();
+                  },
                 ),
                 const Divider(height: 1),
                 _buildSettingTile(
                   icon: Icons.attach_money,
                   title: '1인분 예산',
                   value: _getBudgetText(_profile?['budget_preference']),
-                  onTap: () {},
+                  onTap: () async {
+                    final result = await context.push<bool>('/profile/edit');
+                    if (result == true) _loadProfile();
+                  },
                 ),
               ],
             ),
@@ -156,21 +169,22 @@ class _ProfileTabState extends State<ProfileTab> {
           const SizedBox(height: 16),
 
           // 조리 도구
-          _buildSectionTitle('🔧 조리 도구 관리'),
+          _buildSectionTitle('조리 도구 관리'),
           Card(
             child: ListTile(
               leading: const Icon(Icons.kitchen),
               title: const Text('보유 조리 도구'),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                // TODO: 조리 도구 관리 화면
+              onTap: () async {
+                final result = await context.push<bool>('/profile/cooking-tools');
+                if (result == true) _loadProfile();
               },
             ),
           ),
           const SizedBox(height: 16),
 
           // 앱 설정
-          _buildSectionTitle('⚙️ 설정'),
+          _buildSectionTitle('설정'),
           Card(
             child: Column(
               children: [

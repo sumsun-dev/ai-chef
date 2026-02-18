@@ -45,6 +45,9 @@ class OnboardingState {
         expertise = expertise ?? ['한식'],
         firstIngredients = firstIngredients ?? [];
 
+  /// 기본 도구 맵 (외부 접근용)
+  static Map<String, bool> get defaultTools => Map.from(_defaultTools);
+
   /// DB insert_default_cooking_tools() 와 일치하는 기본 도구
   static const Map<String, bool> _defaultTools = {
     'frying_pan': true,

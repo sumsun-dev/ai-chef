@@ -4,6 +4,7 @@ import '../models/chef.dart';
 import '../models/chef_config.dart';
 import '../models/ingredient.dart';
 import '../services/auth_service.dart';
+import '../services/chat_service.dart';
 import '../services/gemini_service.dart';
 import '../services/ingredient_service.dart';
 
@@ -22,12 +23,14 @@ class _ChatScreenState extends State<ChatScreen> {
   final ScrollController _scrollController = ScrollController();
   final AuthService _authService = AuthService();
   final IngredientService _ingredientService = IngredientService();
+  final ChatService _chatService = ChatService();
 
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
   Chef _currentChef = Chefs.defaultChef;
   List<Ingredient> _ingredients = [];
   GeminiService? _geminiService;
+  bool _hasHistory = false;
 
   @override
   void initState() {
@@ -50,7 +53,11 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     await _loadChefAndIngredients();
-    _addGreeting();
+    await _loadChatHistory();
+
+    if (!_hasHistory) {
+      _addGreeting();
+    }
 
     if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
       _sendMessage(widget.initialMessage!);
@@ -76,6 +83,23 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  Future<void> _loadChatHistory() async {
+    try {
+      final history = await _chatService.getChatHistory(
+        chefId: _currentChef.id,
+      );
+      if (history.isNotEmpty && mounted) {
+        setState(() {
+          _messages.addAll(history);
+          _hasHistory = true;
+        });
+        _scrollToBottom();
+      }
+    } catch (_) {
+      // 기록 로드 실패 시 무시
+    }
+  }
+
   void _addGreeting() {
     final greeting = ChatMessage(
       role: MessageRole.assistant,
@@ -93,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
     final userMessage = ChatMessage(
       role: MessageRole.user,
       content: text.trim(),
+      chefId: _currentChef.id,
     );
 
     final loadingMessage = ChatMessage(
@@ -130,16 +155,22 @@ class _ChatScreenState extends State<ChatScreen> {
       );
 
       if (mounted) {
+        final assistantMessage = ChatMessage(
+          role: MessageRole.assistant,
+          content: response,
+          chefId: _currentChef.id,
+        );
+
         setState(() {
           final loadingIndex = _messages.indexWhere((m) => m.isLoading);
           if (loadingIndex != -1) {
-            _messages[loadingIndex] = _messages[loadingIndex].copyWith(
-              content: response,
-              isLoading: false,
-            );
+            _messages[loadingIndex] = assistantMessage;
           }
           _isLoading = false;
         });
+
+        // DB 저장 (fire-and-forget)
+        _saveToDB(userMessage, assistantMessage);
       }
     } catch (e) {
       if (mounted) {
@@ -157,6 +188,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
 
     _scrollToBottom();
+  }
+
+  Future<void> _saveToDB(ChatMessage user, ChatMessage assistant) async {
+    try {
+      await _chatService.saveMessages([user, assistant]);
+    } catch (_) {
+      // 저장 실패 시 무시 (UX에 영향 없음)
+    }
   }
 
   void _scrollToBottom() {

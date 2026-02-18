@@ -8,6 +8,7 @@ import '../../models/recipe.dart';
 import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
+import '../../services/recipe_service.dart';
 
 /// 레시피 탭
 class RecipeTab extends StatefulWidget {
@@ -20,11 +21,16 @@ class RecipeTab extends StatefulWidget {
 class _RecipeTabState extends State<RecipeTab> {
   final IngredientService _ingredientService = IngredientService();
   final AuthService _authService = AuthService();
+  final RecipeService _recipeService = RecipeService();
 
   List<Ingredient> _ingredients = [];
   List<Recipe> _recipes = [];
+  List<Recipe> _bookmarkedRecipes = [];
+  List<Map<String, dynamic>> _historyList = [];
   bool _isLoadingIngredients = true;
   bool _isGenerating = false;
+  bool _isLoadingSaved = false;
+  bool _isLoadingHistory = false;
   String? _error;
 
   // 추천 조건
@@ -36,6 +42,8 @@ class _RecipeTabState extends State<RecipeTab> {
   void initState() {
     super.initState();
     _loadIngredients();
+    _loadBookmarkedRecipes();
+    _loadHistory();
   }
 
   Future<void> _loadIngredients() async {
@@ -50,6 +58,36 @@ class _RecipeTabState extends State<RecipeTab> {
         _isLoadingIngredients = false;
         _error = '재료를 불러오지 못했습니다.';
       });
+    }
+  }
+
+  Future<void> _loadBookmarkedRecipes() async {
+    setState(() => _isLoadingSaved = true);
+    try {
+      final recipes = await _recipeService.getBookmarkedRecipes();
+      if (mounted) {
+        setState(() {
+          _bookmarkedRecipes = recipes;
+          _isLoadingSaved = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingSaved = false);
+    }
+  }
+
+  Future<void> _loadHistory() async {
+    setState(() => _isLoadingHistory = true);
+    try {
+      final history = await _recipeService.getRecipeHistory();
+      if (mounted) {
+        setState(() {
+          _historyList = history;
+          _isLoadingHistory = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoadingHistory = false);
     }
   }
 
@@ -103,14 +141,6 @@ class _RecipeTabState extends State<RecipeTab> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('레시피'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // TODO: 검색 화면
-            },
-          ),
-        ],
       ),
       body: DefaultTabController(
         length: 3,
@@ -129,8 +159,8 @@ class _RecipeTabState extends State<RecipeTab> {
               child: TabBarView(
                 children: [
                   _buildRecommendedTab(colorScheme),
-                  _buildSavedTab(),
-                  _buildHistoryTab(),
+                  _buildSavedTab(colorScheme),
+                  _buildHistoryTab(colorScheme),
                 ],
               ),
             ),
@@ -150,33 +180,26 @@ class _RecipeTabState extends State<RecipeTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 재료 상태
           _buildIngredientStatus(colorScheme),
           const SizedBox(height: 16),
 
-          // 추천 조건 선택
           if (_ingredients.isNotEmpty) ...[
             _buildConditionSelector(colorScheme),
             const SizedBox(height: 16),
-
-            // 추천 버튼
             _buildGenerateButton(colorScheme),
             const SizedBox(height: 16),
           ],
 
-          // 에러 메시지
           if (_error != null) ...[
             _buildErrorMessage(),
             const SizedBox(height: 16),
           ],
 
-          // 로딩 애니메이션
           if (_isGenerating) ...[
             _buildLoadingIndicator(colorScheme),
             const SizedBox(height: 16),
           ],
 
-          // 결과 레시피 리스트
           if (_recipes.isNotEmpty) ...[
             const Text(
               '추천 레시피',
@@ -192,7 +215,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 보유 재료 상태 표시
   Widget _buildIngredientStatus(ColorScheme colorScheme) {
     if (_ingredients.isEmpty) {
       return Container(
@@ -247,7 +269,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 추천 조건 선택 UI
   Widget _buildConditionSelector(ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +279,6 @@ class _RecipeTabState extends State<RecipeTab> {
         ),
         const SizedBox(height: 12),
 
-        // 인원수
         Row(
           children: [
             SizedBox(
@@ -291,7 +311,6 @@ class _RecipeTabState extends State<RecipeTab> {
         ),
         const SizedBox(height: 8),
 
-        // 조리시간
         Row(
           children: [
             SizedBox(
@@ -325,7 +344,6 @@ class _RecipeTabState extends State<RecipeTab> {
         ),
         const SizedBox(height: 8),
 
-        // 난이도
         Row(
           children: [
             SizedBox(
@@ -366,7 +384,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 레시피 추천 버튼
   Widget _buildGenerateButton(ColorScheme colorScheme) {
     return SizedBox(
       width: double.infinity,
@@ -382,7 +399,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 로딩 인디케이터
   Widget _buildLoadingIndicator(ColorScheme colorScheme) {
     return Container(
       width: double.infinity,
@@ -420,7 +436,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 에러 메시지
   Widget _buildErrorMessage() {
     return Container(
       width: double.infinity,
@@ -451,7 +466,6 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  /// 레시피 카드
   Widget _buildRecipeCard(Recipe recipe, ColorScheme colorScheme) {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -460,7 +474,10 @@ class _RecipeTabState extends State<RecipeTab> {
       color: Colors.white,
       child: InkWell(
         borderRadius: BorderRadius.circular(14),
-        onTap: () => context.push('/recipe/detail', extra: recipe),
+        onTap: () async {
+          await context.push('/recipe/detail', extra: recipe);
+          _loadBookmarkedRecipes();
+        },
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -537,34 +554,106 @@ class _RecipeTabState extends State<RecipeTab> {
     }
   }
 
-  Widget _buildSavedTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.bookmark_border, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '저장한 레시피가 없어요',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-        ],
+  Widget _buildSavedTab(ColorScheme colorScheme) {
+    if (_isLoadingSaved) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_bookmarkedRecipes.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadBookmarkedRecipes,
+        child: ListView(
+          children: [
+            const SizedBox(height: 120),
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.bookmark_border, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    '저장한 레시피가 없어요',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '레시피를 북마크하면 여기에 표시됩니다',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadBookmarkedRecipes,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _bookmarkedRecipes.length,
+        itemBuilder: (context, index) {
+          return _buildRecipeCard(_bookmarkedRecipes[index], colorScheme);
+        },
       ),
     );
   }
 
-  Widget _buildHistoryTab() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.history, size: 64, color: Colors.grey[400]),
-          const SizedBox(height: 16),
-          Text(
-            '요리 기록이 없어요',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-          ),
-        ],
+  Widget _buildHistoryTab(ColorScheme colorScheme) {
+    if (_isLoadingHistory) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_historyList.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: _loadHistory,
+        child: ListView(
+          children: [
+            const SizedBox(height: 120),
+            Center(
+              child: Column(
+                children: [
+                  Icon(Icons.history, size: 64, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    '요리 기록이 없어요',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '레시피를 요리하면 기록이 남습니다',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadHistory,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _historyList.length,
+        itemBuilder: (context, index) {
+          final item = _historyList[index];
+          final createdAt = item['created_at'] != null
+              ? DateTime.parse(item['created_at'])
+              : DateTime.now();
+
+          return Card(
+            margin: const EdgeInsets.only(bottom: 8),
+            child: ListTile(
+              leading: const Icon(Icons.restaurant_menu),
+              title: Text(item['recipe_title'] ?? ''),
+              subtitle: Text(
+                '${createdAt.year}.${createdAt.month.toString().padLeft(2, '0')}.${createdAt.day.toString().padLeft(2, '0')}',
+              ),
+            ),
+          );
+        },
       ),
     );
   }

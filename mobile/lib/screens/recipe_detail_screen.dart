@@ -1,12 +1,84 @@
 import 'package:flutter/material.dart';
 
 import '../models/recipe.dart';
+import '../services/recipe_service.dart';
 
 /// 레시피 상세 화면
-class RecipeDetailScreen extends StatelessWidget {
+class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
 
   const RecipeDetailScreen({super.key, required this.recipe});
+
+  @override
+  State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
+}
+
+class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
+  final RecipeService _recipeService = RecipeService();
+  late Recipe _recipe;
+  bool _isSaved = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _recipe = widget.recipe;
+    _isSaved = _recipe.id != null;
+  }
+
+  Future<void> _saveRecipe() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    try {
+      final saved = await _recipeService.saveRecipe(_recipe);
+      if (mounted) {
+        setState(() {
+          _recipe = saved;
+          _isSaved = true;
+          _isSaving = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('레시피가 저장되었습니다.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('저장에 실패했습니다.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _toggleBookmark() async {
+    if (!_isSaved || _recipe.id == null) {
+      await _saveRecipe();
+      return;
+    }
+
+    final newBookmark = !_recipe.isBookmarked;
+    try {
+      await _recipeService.toggleBookmark(_recipe.id!, newBookmark);
+      if (mounted) {
+        setState(() {
+          _recipe = _recipe.copyWith(isBookmarked: newBookmark);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(newBookmark ? '북마크에 추가했습니다.' : '북마크를 해제했습니다.'),
+          ),
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('처리에 실패했습니다.')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +86,29 @@ class RecipeDetailScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(recipe.title),
+        title: Text(_recipe.title),
+        actions: [
+          if (!_isSaved)
+            IconButton(
+              icon: _isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_outlined),
+              onPressed: _isSaving ? null : _saveRecipe,
+              tooltip: '레시피 저장',
+            ),
+          IconButton(
+            icon: Icon(
+              _recipe.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
+              color: _recipe.isBookmarked ? colorScheme.primary : null,
+            ),
+            onPressed: _toggleBookmark,
+            tooltip: '북마크',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -26,11 +120,11 @@ class RecipeDetailScreen extends StatelessWidget {
             _buildIngredientsSection(colorScheme),
             const Divider(height: 32),
             _buildInstructionsSection(colorScheme),
-            if (recipe.nutrition != null) ...[
+            if (_recipe.nutrition != null) ...[
               const Divider(height: 32),
               _buildNutritionSection(colorScheme),
             ],
-            if (recipe.chefNote != null && recipe.chefNote!.isNotEmpty) ...[
+            if (_recipe.chefNote != null && _recipe.chefNote!.isNotEmpty) ...[
               const Divider(height: 32),
               _buildChefNote(colorScheme),
             ],
@@ -41,7 +135,6 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 헤더: 제목 + 설명
   Widget _buildHeader(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.all(16),
@@ -49,7 +142,7 @@ class RecipeDetailScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            recipe.title,
+            _recipe.title,
             style: const TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
@@ -57,7 +150,7 @@ class RecipeDetailScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            recipe.description,
+            _recipe.description,
             style: TextStyle(
               fontSize: 15,
               color: Colors.grey[600],
@@ -69,7 +162,6 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 난이도 / 시간 / 인원 배지
   Widget _buildBadges(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -77,26 +169,26 @@ class RecipeDetailScreen extends StatelessWidget {
         children: [
           _buildBadge(
             icon: Icons.signal_cellular_alt,
-            label: _difficultyLabel(recipe.difficulty),
-            color: _difficultyColor(recipe.difficulty),
+            label: _difficultyLabel(_recipe.difficulty),
+            color: _difficultyColor(_recipe.difficulty),
           ),
           const SizedBox(width: 8),
           _buildBadge(
             icon: Icons.timer_outlined,
-            label: '${recipe.cookingTime}분',
+            label: '${_recipe.cookingTime}분',
             color: Colors.blue,
           ),
           const SizedBox(width: 8),
           _buildBadge(
             icon: Icons.people_outline,
-            label: '${recipe.servings}인분',
+            label: '${_recipe.servings}인분',
             color: Colors.teal,
           ),
-          if (recipe.cuisine.isNotEmpty) ...[
+          if (_recipe.cuisine.isNotEmpty) ...[
             const SizedBox(width: 8),
             _buildBadge(
               icon: Icons.restaurant,
-              label: recipe.cuisine,
+              label: _recipe.cuisine,
               color: Colors.purple,
             ),
           ],
@@ -135,7 +227,6 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 재료 섹션
   Widget _buildIngredientsSection(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -156,7 +247,7 @@ class RecipeDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...recipe.ingredients.map(
+          ..._recipe.ingredients.map(
             (ingredient) => _buildIngredientRow(ingredient, colorScheme),
           ),
         ],
@@ -212,7 +303,6 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 조리 단계 섹션
   Widget _buildInstructionsSection(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -233,7 +323,7 @@ class RecipeDetailScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          ...recipe.instructions.map(
+          ..._recipe.instructions.map(
             (step) => _buildInstructionCard(step, colorScheme),
           ),
         ],
@@ -344,9 +434,8 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 영양 정보 섹션
   Widget _buildNutritionSection(ColorScheme colorScheme) {
-    final nutrition = recipe.nutrition!;
+    final nutrition = _recipe.nutrition!;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -369,30 +458,10 @@ class RecipeDetailScreen extends StatelessWidget {
           const SizedBox(height: 12),
           Row(
             children: [
-              _buildNutritionItem(
-                '칼로리',
-                '${nutrition.calories}',
-                'kcal',
-                Colors.red,
-              ),
-              _buildNutritionItem(
-                '단백질',
-                '${nutrition.protein}',
-                'g',
-                Colors.blue,
-              ),
-              _buildNutritionItem(
-                '탄수화물',
-                '${nutrition.carbs}',
-                'g',
-                Colors.orange,
-              ),
-              _buildNutritionItem(
-                '지방',
-                '${nutrition.fat}',
-                'g',
-                Colors.purple,
-              ),
+              _buildNutritionItem('칼로리', '${nutrition.calories}', 'kcal', Colors.red),
+              _buildNutritionItem('단백질', '${nutrition.protein}', 'g', Colors.blue),
+              _buildNutritionItem('탄수화물', '${nutrition.carbs}', 'g', Colors.orange),
+              _buildNutritionItem('지방', '${nutrition.fat}', 'g', Colors.purple),
             ],
           ),
         ],
@@ -418,10 +487,7 @@ class RecipeDetailScreen extends StatelessWidget {
           children: [
             Text(
               label,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
             ),
             const SizedBox(height: 4),
             Text(
@@ -434,10 +500,7 @@ class RecipeDetailScreen extends StatelessWidget {
             ),
             Text(
               unit,
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.grey[500],
-              ),
+              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
             ),
           ],
         ),
@@ -445,7 +508,6 @@ class RecipeDetailScreen extends StatelessWidget {
     );
   }
 
-  /// 셰프 노트
   Widget _buildChefNote(ColorScheme colorScheme) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -483,7 +545,7 @@ class RecipeDetailScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              recipe.chefNote!,
+              _recipe.chefNote!,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[700],

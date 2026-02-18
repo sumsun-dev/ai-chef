@@ -288,9 +288,7 @@ class _HomeTabState extends State<HomeTab> {
               ],
             ),
             TextButton(
-              onPressed: () {
-                // TODO: 냉장고 탭으로 이동
-              },
+              onPressed: () => context.go('/refrigerator'),
               child: const Text('전체보기'),
             ),
           ],
