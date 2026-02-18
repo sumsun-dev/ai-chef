@@ -45,8 +45,8 @@ interface ApiResponse<T> {
 ## Gemini Model Selection
 | Use Case | Model | Cost |
 |----------|-------|------|
-| Fast conversation, image analysis | Gemini 2.5 Flash | $0.30 / $2.50 per 1M |
-| Complex recipe generation | Gemini 2.5 Pro | $1.25 / $10.00 per 1M |
+| Fast conversation, image analysis | Gemini 3.0 Flash | $0.30 / $2.50 per 1M |
+| Complex recipe generation | Gemini 3.0 Pro | $1.25 / $10.00 per 1M |
 
 ## AI Chef Rules
 1. Reflect AI chef settings (name, personality, expertise)

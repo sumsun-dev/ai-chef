@@ -46,7 +46,7 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 |------|------|
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth + Google Sign-In |
-| AI Model | Gemini 2.5 Flash / Pro |
+| AI Model | Gemini 3.0 Flash / Pro |
 | Deploy | Google Cloud Run |
 
 ---
@@ -60,7 +60,9 @@ ai-chef/
 │       ├── app/            # App Router (pages, API routes)
 │       │   └── api/        # chat, recipe API endpoints
 │       ├── components/     # UI components (shadcn/ui)
+│       │   └── landing/    # 랜딩 페이지 컴포넌트
 │       └── lib/            # Gemini client, utilities
+│           └── __tests__/  # Vitest 단위 테스트
 ├── mobile/                 # Flutter 모바일 앱
 │   ├── lib/
 │   │   ├── models/         # Ingredient, Recipe, Chef, ChatMessage 등 데이터 모델
@@ -131,6 +133,9 @@ cd mobile && flutter run
 
 # 테스트
 cd mobile && flutter test
+
+# Web 테스트
+cd app && pnpm test
 ```
 
 ---
@@ -142,6 +147,7 @@ cd mobile && flutter test
 pnpm dev              # 개발 서버 (port 3000)
 pnpm build            # 프로덕션 빌드
 pnpm lint             # ESLint
+pnpm test             # Vitest 단위 테스트
 pnpm remotion:studio  # Remotion 영상 편집기
 pnpm remotion:render  # 인트로 영상 렌더링
 ```
@@ -177,8 +183,8 @@ Source of truth: `supabase/migrations/`
 
 | 용도 | 모델 | Input / Output (1M tokens) |
 |------|------|---------------------------|
-| 빠른 대화, 이미지 분석 | Gemini 2.5 Flash | $0.30 / $2.50 |
-| 레시피 생성 | Gemini 2.5 Pro | $1.25 / $10.00 |
+| 빠른 대화, 이미지 분석 | Gemini 3.0 Flash | $0.30 / $2.50 |
+| 레시피 생성 | Gemini 3.0 Pro | $1.25 / $10.00 |
 
 ---
 

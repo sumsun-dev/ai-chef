@@ -1,7 +1,13 @@
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
-// Gemini API 클라이언트 초기화
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+// Gemini API 클라이언트 lazy 초기화
+function getGenAI(): GoogleGenerativeAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY 환경 변수가 설정되지 않았습니다.");
+  }
+  return new GoogleGenerativeAI(apiKey);
+}
 
 // 안전 설정
 const safetySettings = [
@@ -278,7 +284,7 @@ ${config.cookingPhilosophy || "맛있고 건강한 요리를 쉽게 만들 수 �
 
 // Gemini 모델 가져오기 (Flash - 빠른 대화용)
 export function getGeminiFlash() {
-  return genAI.getGenerativeModel({
+  return getGenAI().getGenerativeModel({
     model: "gemini-3.0-flash",
     safetySettings,
   });
@@ -286,7 +292,7 @@ export function getGeminiFlash() {
 
 // Gemini 모델 가져오기 (Pro - 복잡한 레시피용)
 export function getGeminiPro() {
-  return genAI.getGenerativeModel({
+  return getGenAI().getGenerativeModel({
     model: "gemini-3.0-pro",
     safetySettings,
   });
@@ -321,23 +327,29 @@ export async function sendMessage(
     previousMessages?: Array<{ role: "user" | "model"; content: string }>;
   }
 ) {
-  const model = getGeminiFlash();
-  const systemPrompt = generateChefSystemPrompt(chefConfig);
+  try {
+    const model = getGeminiFlash();
+    const systemPrompt = generateChefSystemPrompt(chefConfig);
 
-  // 컨텍스트 추가
-  let contextPrompt = "";
-  if (context?.ingredients?.length) {
-    contextPrompt += `\n\n[보유 재료]: ${context.ingredients.join(", ")}`;
+    // 컨텍스트 추가
+    let contextPrompt = "";
+    if (context?.ingredients?.length) {
+      contextPrompt += `\n\n[보유 재료]: ${context.ingredients.join(", ")}`;
+    }
+    if (context?.tools?.length) {
+      contextPrompt += `\n[보유 도구]: ${context.tools.join(", ")}`;
+    }
+
+    const fullPrompt = `${systemPrompt}${contextPrompt}\n\n사용자: ${message}`;
+
+    const result = await model.generateContent(fullPrompt);
+    const response = result.response;
+    return response.text();
+  } catch (error) {
+    throw new Error(
+      `AI 응답 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
+    );
   }
-  if (context?.tools?.length) {
-    contextPrompt += `\n[보유 도구]: ${context.tools.join(", ")}`;
-  }
-
-  const fullPrompt = `${systemPrompt}${contextPrompt}\n\n사용자: ${message}`;
-
-  const result = await model.generateContent(fullPrompt);
-  const response = result.response;
-  return response.text();
 }
 
 // 레시피 생성 (Pro 모델 사용 - 복잡한 추론에 최적화)
@@ -354,10 +366,11 @@ export async function generateRecipe(
   },
   chefConfig: AIChefConfig
 ) {
-  const model = getGeminiPro();
-  const systemPrompt = generateChefSystemPrompt(chefConfig);
+  try {
+    const model = getGeminiPro();
+    const systemPrompt = generateChefSystemPrompt(chefConfig);
 
-  const prompt = `${systemPrompt}
+    const prompt = `${systemPrompt}
 
 ## 사용자 정보
 - 보유 재료: ${request.ingredients.join(", ")}
@@ -415,19 +428,24 @@ export async function generateRecipe(
 }
 \`\`\``;
 
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  const text = response.text();
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
 
-  // JSON 파싱 시도
-  try {
-    const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[1]);
+    // JSON 파싱 시도
+    try {
+      const jsonMatch = text.match(/```json\n?([\s\S]*?)\n?```/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      return JSON.parse(text);
+    } catch (parseError) {
+      console.warn("레시피 JSON 파싱 실패, 원본 텍스트 반환:", parseError);
+      return { rawText: text };
     }
-    return JSON.parse(text);
-  } catch {
-    // JSON 파싱 실패 시 텍스트 그대로 반환
-    return { rawText: text };
+  } catch (error) {
+    throw new Error(
+      `레시피 생성 실패: ${error instanceof Error ? error.message : "알 수 없는 오류"}`
+    );
   }
 }
