@@ -13,7 +13,7 @@ class RecipeService {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
-        .from('saved_recipes')
+        .from('recipes')
         .select()
         .eq('user_id', _userId!)
         .order('created_at', ascending: false);
@@ -28,7 +28,7 @@ class RecipeService {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     final response = await _supabase
-        .from('saved_recipes')
+        .from('recipes')
         .select()
         .eq('user_id', _userId!)
         .eq('is_bookmarked', true)
@@ -47,7 +47,7 @@ class RecipeService {
     data['user_id'] = _userId;
 
     final response = await _supabase
-        .from('saved_recipes')
+        .from('recipes')
         .insert(data)
         .select()
         .single();
@@ -60,7 +60,7 @@ class RecipeService {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     await _supabase
-        .from('saved_recipes')
+        .from('recipes')
         .update({'is_bookmarked': isBookmarked})
         .eq('id', recipeId)
         .eq('user_id', _userId!);
@@ -71,7 +71,7 @@ class RecipeService {
     if (_userId == null) throw Exception('로그인이 필요합니다.');
 
     await _supabase
-        .from('saved_recipes')
+        .from('recipes')
         .delete()
         .eq('id', recipeId)
         .eq('user_id', _userId!);
@@ -103,7 +103,7 @@ class RecipeService {
         .from('recipe_history')
         .select()
         .eq('user_id', _userId!)
-        .order('created_at', ascending: false)
+        .order('cooked_at', ascending: false)
         .limit(limit);
 
     return List<Map<String, dynamic>>.from(response);

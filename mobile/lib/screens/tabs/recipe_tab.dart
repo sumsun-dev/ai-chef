@@ -639,8 +639,8 @@ class _RecipeTabState extends State<RecipeTab> {
         itemCount: _historyList.length,
         itemBuilder: (context, index) {
           final item = _historyList[index];
-          final createdAt = item['created_at'] != null
-              ? DateTime.parse(item['created_at'])
+          final createdAt = item['cooked_at'] != null
+              ? DateTime.parse(item['cooked_at'])
               : DateTime.now();
 
           return Card(

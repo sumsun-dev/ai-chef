@@ -35,9 +35,9 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
 
       final loaded = Map<String, bool>.from(_tools);
       for (final row in response) {
-        final name = row['tool_name'] as String?;
-        if (name != null && loaded.containsKey(name)) {
-          loaded[name] = row['is_available'] ?? false;
+        final key = row['tool_key'] as String?;
+        if (key != null && loaded.containsKey(key)) {
+          loaded[key] = row['is_available'] ?? false;
         }
       }
 
@@ -64,9 +64,11 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
           .delete()
           .eq('user_id', userId);
 
+      final toolKeyToName = OnboardingState.toolKeyToName;
       final rows = _tools.entries.map((e) => {
         'user_id': userId,
-        'tool_name': e.key,
+        'tool_key': e.key,
+        'tool_name': toolKeyToName[e.key] ?? e.key,
         'is_available': e.value,
       }).toList();
 

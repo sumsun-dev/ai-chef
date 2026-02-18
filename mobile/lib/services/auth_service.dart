@@ -119,6 +119,7 @@ class AuthService {
       'scenarios': state.scenarios,
       'time_preference': state.timePreference,
       'budget_preference': state.budgetPreference,
+      'primary_chef_id': state.selectedPresetId ?? 'baek',
       'ai_chef_name': state.chefName,
       'ai_chef_personality': state.personality,
       'ai_chef_expertise': state.expertise,
