@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/auth_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// 로그인 화면
 class LoginScreen extends StatefulWidget {
@@ -13,14 +15,26 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   late final AuthService _authService;
+  late final AnimationController _floatController;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
     _authService = widget.authService ?? AuthService();
+    _floatController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _floatController.dispose();
+    super.dispose();
   }
 
   Future<void> _signInWithGoogle() async {
@@ -30,15 +44,12 @@ class _LoginScreenState extends State<LoginScreen> {
       await _authService.signInWithGoogle();
 
       if (!mounted) return;
-      // 로그인 성공 -> 프로필 확인
       final profile = await _authService.getUserProfile();
 
       if (!mounted) return;
       if (profile != null && profile['ai_chef_name'] != null) {
-        // 이미 설정 완료 -> 홈으로
         context.go('/');
       } else {
-        // 첫 로그인 -> 온보딩으로
         context.go('/onboarding');
       }
     } catch (e, stackTrace) {
@@ -51,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('로그인에 실패했습니다. 다시 시도해주세요.'),
-            backgroundColor: Colors.red,
+            backgroundColor: AppColors.error,
           ),
         );
       }
@@ -68,54 +79,56 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF6B35),
-              Color(0xFFFF8C42),
-            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.primary, AppColors.primaryLight],
           ),
         ),
         child: SafeArea(
           child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.xxxl),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // 로고/아이콘
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(30),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.2),
-                          blurRadius: 20,
-                          offset: const Offset(0, 10),
-                        ),
+                  // 부유 이모지 일러스트
+                  AnimatedBuilder(
+                    animation: _floatController,
+                    builder: (context, child) {
+                      final offset = Tween<double>(begin: -8, end: 8)
+                          .animate(CurvedAnimation(
+                        parent: _floatController,
+                        curve: Curves.easeInOut,
+                      ));
+                      return Transform.translate(
+                        offset: Offset(0, offset.value),
+                        child: child,
+                      );
+                    },
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text('👨‍🍳', style: TextStyle(fontSize: 52)),
+                        SizedBox(width: 8),
+                        Text('🍳', style: TextStyle(fontSize: 44)),
+                        SizedBox(width: 8),
+                        Text('🥘', style: TextStyle(fontSize: 44)),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.restaurant_menu,
-                      size: 60,
-                      color: Color(0xFFFF6B35),
-                    ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: AppSpacing.xxl),
 
                   // 앱 이름
                   const Text(
                     'AI Chef',
                     style: TextStyle(
-                      fontSize: 40,
+                      fontSize: 44,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
 
                   // 슬로건
                   const Text(
@@ -127,7 +140,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 64),
+                  const SizedBox(height: 56),
 
                   // Google 로그인 버튼
                   SizedBox(
@@ -137,11 +150,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: _isLoading ? null : _signInWithGoogle,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Colors.black87,
+                        foregroundColor: AppColors.textPrimary,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                          borderRadius:
+                              BorderRadius.circular(AppRadius.lg),
                         ),
-                        elevation: 4,
+                        elevation: 0,
                       ),
                       child: _isLoading
                           ? const SizedBox(
@@ -149,20 +163,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               height: 24,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
+                                color: AppColors.primary,
                               ),
                             )
-                          : Row(
+                          : const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Image.network(
-                                  'https://www.google.com/favicon.ico',
-                                  width: 24,
-                                  height: 24,
-                                  errorBuilder: (context, error, stackTrace) =>
-                                      const Icon(Icons.g_mobiledata, size: 24),
+                                Text(
+                                  'G',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF4285F4),
+                                  ),
                                 ),
-                                const SizedBox(width: 12),
-                                const Text(
+                                SizedBox(width: 12),
+                                Text(
                                   'Google로 시작하기',
                                   style: TextStyle(
                                     fontSize: 16,
@@ -173,7 +189,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.xxl),
 
                   // 이용약관
                   Text(

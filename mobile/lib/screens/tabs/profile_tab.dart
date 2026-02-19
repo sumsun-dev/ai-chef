@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/chef.dart';
 import '../../services/auth_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 
 /// 프로필 탭
 class ProfileTab extends StatefulWidget {
@@ -39,8 +42,6 @@ class _ProfileTabState extends State<ProfileTab> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -51,50 +52,60 @@ class _ProfileTabState extends State<ProfileTab> {
     final email = _profile?['email'] ?? '';
     final primaryChefId = _profile?['primary_chef_id'] ?? 'baek';
     final chef = Chefs.findById(primaryChefId) ?? Chefs.defaultChef;
+    final chefColor = Color(chef.primaryColor);
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('프로필'),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          // 프로필 카드
-          Card(
+          // 프로필 카드 — 그라디언트 배경
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  chefColor.withValues(alpha: 0.15),
+                  chefColor.withValues(alpha: 0.05),
+                ],
+              ),
+            ),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(AppSpacing.xl),
               child: Row(
                 children: [
                   CircleAvatar(
                     radius: 32,
-                    backgroundColor: colorScheme.primaryContainer,
+                    backgroundColor: chefColor.withValues(alpha: 0.2),
                     child: Text(
                       userName.isNotEmpty ? userName[0].toUpperCase() : '?',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
+                        color: chefColor,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: AppSpacing.lg),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           userName,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                          style: AppTypography.headlineMedium.copyWith(
+                            color: AppColors.textPrimary,
                           ),
                         ),
                         if (email.isNotEmpty)
                           Text(
                             email,
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey[600],
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
                             ),
                           ),
                       ],
@@ -104,23 +115,77 @@ class _ProfileTabState extends State<ProfileTab> {
               ),
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // 내 셰프
           _buildSectionTitle('내 셰프'),
           Card(
-            child: ListTile(
-              leading: Text(chef.emoji, style: const TextStyle(fontSize: 32)),
-              title: Text(chef.name),
-              subtitle: Text(chef.title),
-              trailing: const Icon(Icons.chevron_right),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadius.lg),
               onTap: () async {
-                final result = await context.push<bool>('/profile/chef-selection');
+                final result =
+                    await context.push<bool>('/profile/chef-selection');
                 if (result == true) _loadProfile();
               },
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: chefColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Center(
+                        child: Text(
+                          chef.emoji,
+                          style: const TextStyle(fontSize: 28),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.lg),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            chef.name,
+                            style: AppTypography.labelLarge.copyWith(
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            chef.title,
+                            style: AppTypography.bodySmall.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            chef.philosophy,
+                            style: AppTypography.labelSmall.copyWith(
+                              color: AppColors.textTertiary,
+                              fontStyle: FontStyle.italic,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.chevron_right,
+                      color: AppColors.textTertiary,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // 요리 설정
           _buildSectionTitle('요리 설정'),
@@ -136,7 +201,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     if (result == true) _loadProfile();
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   icon: Icons.people,
                   title: '가구원 수',
@@ -146,7 +211,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     if (result == true) _loadProfile();
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   icon: Icons.timer,
                   title: '선호 조리시간',
@@ -156,7 +221,7 @@ class _ProfileTabState extends State<ProfileTab> {
                     if (result == true) _loadProfile();
                   },
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   icon: Icons.attach_money,
                   title: '1인분 예산',
@@ -169,22 +234,22 @@ class _ProfileTabState extends State<ProfileTab> {
               ],
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // 조리 도구
           _buildSectionTitle('조리 도구 관리'),
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.kitchen),
-              title: const Text('보유 조리 도구'),
-              trailing: const Icon(Icons.chevron_right),
+            child: _buildSettingTile(
+              icon: Icons.kitchen,
+              title: '보유 조리 도구',
               onTap: () async {
-                final result = await context.push<bool>('/profile/cooking-tools');
+                final result =
+                    await context.push<bool>('/profile/cooking-tools');
                 if (result == true) _loadProfile();
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
 
           // 앱 설정
           _buildSectionTitle('설정'),
@@ -196,13 +261,13 @@ class _ProfileTabState extends State<ProfileTab> {
                   title: '알림 설정',
                   onTap: () => context.push('/settings/notifications'),
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   icon: Icons.lock,
                   title: '개인정보 및 보안',
                   onTap: () => context.push('/settings/privacy'),
                 ),
-                const Divider(height: 1),
+                const Divider(height: 1, indent: 56),
                 _buildSettingTile(
                   icon: Icons.help,
                   title: '도움말',
@@ -211,18 +276,18 @@ class _ProfileTabState extends State<ProfileTab> {
               ],
             ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xxl),
 
           // 로그아웃
           OutlinedButton(
             onPressed: _signOut,
             style: OutlinedButton.styleFrom(
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
             ),
             child: const Text('로그아웃'),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
         ],
       ),
     );
@@ -230,12 +295,12 @@ class _ProfileTabState extends State<ProfileTab> {
 
   Widget _buildSectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Text(
         title,
-        style: const TextStyle(
+        style: AppTypography.labelLarge.copyWith(
           fontSize: 16,
-          fontWeight: FontWeight.bold,
+          color: AppColors.textPrimary,
         ),
       ),
     );
@@ -248,18 +313,31 @@ class _ProfileTabState extends State<ProfileTab> {
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
+      leading: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+        ),
+        child: Icon(icon, size: 20, color: AppColors.primary),
+      ),
+      title: Text(
+        title,
+        style: AppTypography.bodyLarge.copyWith(color: AppColors.textPrimary),
+      ),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (value != null)
             Text(
               value,
-              style: TextStyle(color: Colors.grey[600]),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textTertiary,
+              ),
             ),
-          const SizedBox(width: 4),
-          const Icon(Icons.chevron_right),
+          const SizedBox(width: AppSpacing.xs),
+          const Icon(Icons.chevron_right, color: AppColors.textTertiary),
         ],
       ),
       onTap: onTap,

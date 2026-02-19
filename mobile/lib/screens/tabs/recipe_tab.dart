@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../components/empty_state.dart';
+import '../../components/recipe_card.dart';
 import '../../models/chef.dart';
 import '../../models/chef_config.dart';
 import '../../models/ingredient.dart';
@@ -10,6 +12,9 @@ import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
 import '../../services/recipe_service.dart';
 import '../../services/tool_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 
 /// 레시피 탭
 class RecipeTab extends StatefulWidget {
@@ -48,7 +53,6 @@ class _RecipeTabState extends State<RecipeTab> {
   bool _isLoadingHistory = false;
   String? _error;
 
-  // 추천 조건
   int _servings = 1;
   int? _maxCookingTime;
   RecipeDifficulty? _difficulty;
@@ -156,8 +160,6 @@ class _RecipeTabState extends State<RecipeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('레시피'),
@@ -166,10 +168,8 @@ class _RecipeTabState extends State<RecipeTab> {
         length: 3,
         child: Column(
           children: [
-            TabBar(
-              labelColor: colorScheme.primary,
-              unselectedLabelColor: colorScheme.onSurfaceVariant,
-              tabs: const [
+            const TabBar(
+              tabs: [
                 Tab(text: '추천'),
                 Tab(text: '저장됨'),
                 Tab(text: '기록'),
@@ -178,9 +178,9 @@ class _RecipeTabState extends State<RecipeTab> {
             Expanded(
               child: TabBarView(
                 children: [
-                  _buildRecommendedTab(colorScheme),
-                  _buildSavedTab(colorScheme),
-                  _buildHistoryTab(colorScheme),
+                  _buildRecommendedTab(),
+                  _buildSavedTab(),
+                  _buildHistoryTab(),
                 ],
               ),
             ),
@@ -190,44 +190,52 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  Widget _buildRecommendedTab(ColorScheme colorScheme) {
+  Widget _buildRecommendedTab() {
     if (_isLoadingIngredients) {
       return const Center(child: CircularProgressIndicator());
     }
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildIngredientStatus(colorScheme),
-          const SizedBox(height: 16),
+          _buildIngredientStatus(),
+          const SizedBox(height: AppSpacing.lg),
 
           if (_ingredients.isNotEmpty) ...[
-            _buildConditionSelector(colorScheme),
-            const SizedBox(height: 16),
-            _buildGenerateButton(colorScheme),
-            const SizedBox(height: 16),
+            _buildConditionSelector(),
+            const SizedBox(height: AppSpacing.lg),
+            _buildGenerateButton(),
+            const SizedBox(height: AppSpacing.lg),
           ],
 
           if (_error != null) ...[
             _buildErrorMessage(),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
           ],
 
           if (_isGenerating) ...[
-            _buildLoadingIndicator(colorScheme),
-            const SizedBox(height: 16),
+            _buildLoadingIndicator(),
+            const SizedBox(height: AppSpacing.lg),
           ],
 
           if (_recipes.isNotEmpty) ...[
-            const Text(
+            Text(
               '추천 레시피',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: AppTypography.headlineSmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             ..._recipes.map(
-              (recipe) => _buildRecipeCard(recipe, colorScheme),
+              (recipe) => RecipeCard(
+                recipe: recipe,
+                onTap: () async {
+                  await context.push('/recipe/detail', extra: recipe);
+                  _loadBookmarkedRecipes();
+                },
+              ),
             ),
           ],
         ],
@@ -235,26 +243,28 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  Widget _buildIngredientStatus(ColorScheme colorScheme) {
+  Widget _buildIngredientStatus() {
     if (_ingredients.isEmpty) {
       return Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         decoration: BoxDecoration(
-          color: Colors.grey[50],
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          color: AppColors.surfaceDim,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           children: [
-            Icon(Icons.kitchen_outlined, size: 48, color: Colors.grey[400]),
-            const SizedBox(height: 12),
+            const Text('🍽️', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: AppSpacing.md),
             Text(
               '냉장고에 재료를 등록하면\n맞춤 레시피를 추천해드려요',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 15, color: Colors.grey[600]),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             OutlinedButton.icon(
               onPressed: () => context.go('/refrigerator'),
               icon: const Icon(Icons.add, size: 18),
@@ -268,20 +278,22 @@ class _RecipeTabState extends State<RecipeTab> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.15),
+          color: AppColors.primary.withValues(alpha: 0.15),
         ),
       ),
       child: Row(
         children: [
-          Icon(Icons.check_circle, color: colorScheme.primary, size: 20),
+          const Icon(Icons.check_circle, color: AppColors.primary, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               '보유 재료 ${_ingredients.length}개로 레시피를 추천받을 수 있어요',
-              style: const TextStyle(fontSize: 14),
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
             ),
           ),
         ],
@@ -289,143 +301,104 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  Widget _buildConditionSelector(ColorScheme colorScheme) {
+  Widget _buildConditionSelector() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           '추천 조건',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          style: AppTypography.labelLarge.copyWith(
+            fontSize: 16,
+            color: AppColors.textPrimary,
+          ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
 
-        Row(
-          children: [
-            SizedBox(
-              width: 70,
-              child: Text(
-                '인원수',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            ),
-            ...List.generate(4, (i) {
-              final count = i + 1;
-              final isSelected = _servings == count;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text('$count인'),
-                  selected: isSelected,
-                  onSelected: (_) => setState(() => _servings = count),
-                  selectedColor: colorScheme.primary.withValues(alpha: 0.15),
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    color: isSelected ? colorScheme.primary : null,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-        const SizedBox(height: 8),
+        _buildConditionRow('인원수', List.generate(4, (i) {
+          final count = i + 1;
+          return _ConditionOption('$count인', _servings == count, () {
+            setState(() => _servings = count);
+          });
+        })),
+        const SizedBox(height: AppSpacing.sm),
 
-        Row(
-          children: [
-            SizedBox(
-              width: 70,
-              child: Text(
-                '조리시간',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            ),
-            ...[null, 15, 30, 60].map((time) {
-              final isSelected = _maxCookingTime == time;
-              final label = time == null ? '무관' : '$time분';
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(label),
-                  selected: isSelected,
-                  onSelected: (_) =>
-                      setState(() => _maxCookingTime = time),
-                  selectedColor: colorScheme.primary.withValues(alpha: 0.15),
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    color: isSelected ? colorScheme.primary : null,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-        const SizedBox(height: 8),
+        _buildConditionRow('조리시간', [null, 15, 30, 60].map((time) {
+          return _ConditionOption(
+            time == null ? '무관' : '$time분',
+            _maxCookingTime == time,
+            () => setState(() => _maxCookingTime = time),
+          );
+        }).toList()),
+        const SizedBox(height: AppSpacing.sm),
 
-        Row(
-          children: [
-            SizedBox(
-              width: 70,
-              child: Text(
-                '난이도',
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
-            ),
-            ...[
-              (null, '무관'),
-              (RecipeDifficulty.easy, '쉬움'),
-              (RecipeDifficulty.medium, '보통'),
-              (RecipeDifficulty.hard, '어려움'),
-            ].map((entry) {
-              final (diff, label) = entry;
-              final isSelected = _difficulty == diff;
-              return Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: ChoiceChip(
-                  label: Text(label),
-                  selected: isSelected,
-                  onSelected: (_) =>
-                      setState(() => _difficulty = diff),
-                  selectedColor: colorScheme.primary.withValues(alpha: 0.15),
-                  labelStyle: TextStyle(
-                    fontSize: 13,
-                    color: isSelected ? colorScheme.primary : null,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.normal,
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
+        _buildConditionRow('난이도', [
+          (null, '무관'),
+          (RecipeDifficulty.easy, '쉬움'),
+          (RecipeDifficulty.medium, '보통'),
+          (RecipeDifficulty.hard, '어려움'),
+        ].map((entry) {
+          final (diff, label) = entry;
+          return _ConditionOption(
+            label,
+            _difficulty == diff,
+            () => setState(() => _difficulty = diff),
+          );
+        }).toList()),
       ],
     );
   }
 
-  Widget _buildGenerateButton(ColorScheme colorScheme) {
+  Widget _buildConditionRow(String label, List<_ConditionOption> options) {
+    return Row(
+      children: [
+        SizedBox(
+          width: 70,
+          child: Text(
+            label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+        ...options.map((opt) {
+          return Padding(
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
+            child: ChoiceChip(
+              label: Text(opt.label),
+              selected: opt.isSelected,
+              onSelected: (_) => opt.onTap(),
+              labelStyle: TextStyle(
+                fontSize: 13,
+                color: opt.isSelected ? AppColors.primary : null,
+                fontWeight:
+                    opt.isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
+  Widget _buildGenerateButton() {
     return SizedBox(
       width: double.infinity,
       height: 50,
       child: FilledButton.icon(
         onPressed: _isGenerating ? null : _generateRecipe,
         icon: const Icon(Icons.auto_awesome, size: 20),
-        label: const Text(
-          '레시피 추천받기',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        ),
+        label: const Text('레시피 추천받기'),
       ),
     );
   }
 
-  Widget _buildLoadingIndicator(ColorScheme colorScheme) {
+  Widget _buildLoadingIndicator() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(32),
+      padding: const EdgeInsets.all(AppSpacing.xxxl),
       decoration: BoxDecoration(
-        color: colorScheme.primary.withValues(alpha: 0.04),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.primary.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         children: [
@@ -434,22 +407,23 @@ class _RecipeTabState extends State<RecipeTab> {
             height: 40,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              color: colorScheme.primary,
+              color: AppColors.primary,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Text(
             'AI 셰프가 레시피를 만들고 있어요...',
-            style: TextStyle(
-              fontSize: 15,
-              color: colorScheme.primary,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.primary,
               fontWeight: FontWeight.w500,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             '보유 재료를 분석하고 최적의 레시피를 찾는 중',
-            style: TextStyle(fontSize: 13, color: Colors.grey[500]),
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -459,20 +433,20 @@ class _RecipeTabState extends State<RecipeTab> {
   Widget _buildErrorMessage() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.08),
+        color: AppColors.error.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.2)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 20),
-          const SizedBox(width: 8),
+          const Icon(Icons.error_outline, color: AppColors.error, size: 20),
+          const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
               _error!,
-              style: const TextStyle(fontSize: 14, color: Colors.red),
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.error),
             ),
           ),
           IconButton(
@@ -486,95 +460,7 @@ class _RecipeTabState extends State<RecipeTab> {
     );
   }
 
-  Widget _buildRecipeCard(Recipe recipe, ColorScheme colorScheme) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 0,
-      color: Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () async {
-          await context.push('/recipe/detail', extra: recipe);
-          _loadBookmarkedRecipes();
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                recipe.title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                recipe.description,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _buildCardBadge(
-                    Icons.timer_outlined,
-                    '${recipe.cookingTime}분',
-                  ),
-                  const SizedBox(width: 8),
-                  _buildCardBadge(
-                    Icons.signal_cellular_alt,
-                    _difficultyLabel(recipe.difficulty),
-                  ),
-                  const SizedBox(width: 8),
-                  _buildCardBadge(
-                    Icons.people_outline,
-                    '${recipe.servings}인분',
-                  ),
-                  const Spacer(),
-                  Icon(
-                    Icons.arrow_forward_ios,
-                    size: 14,
-                    color: Colors.grey[400],
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCardBadge(IconData icon, String label) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.grey[500]),
-        const SizedBox(width: 3),
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-        ),
-      ],
-    );
-  }
-
-  String _difficultyLabel(RecipeDifficulty difficulty) {
-    switch (difficulty) {
-      case RecipeDifficulty.easy:
-        return '쉬움';
-      case RecipeDifficulty.medium:
-        return '보통';
-      case RecipeDifficulty.hard:
-        return '어려움';
-    }
-  }
-
-  Widget _buildSavedTab(ColorScheme colorScheme) {
+  Widget _buildSavedTab() {
     if (_isLoadingSaved) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -583,24 +469,12 @@ class _RecipeTabState extends State<RecipeTab> {
       return RefreshIndicator(
         onRefresh: _loadBookmarkedRecipes,
         child: ListView(
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.bookmark_border, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    '저장한 레시피가 없어요',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '레시피를 북마크하면 여기에 표시됩니다',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                  ),
-                ],
-              ),
+          children: const [
+            SizedBox(height: 80),
+            EmptyState(
+              emoji: '🔖',
+              title: '저장한 레시피가 없어요',
+              subtitle: '레시피를 북마크하면 여기에 표시됩니다',
             ),
           ],
         ),
@@ -610,16 +484,25 @@ class _RecipeTabState extends State<RecipeTab> {
     return RefreshIndicator(
       onRefresh: _loadBookmarkedRecipes,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: _bookmarkedRecipes.length,
         itemBuilder: (context, index) {
-          return _buildRecipeCard(_bookmarkedRecipes[index], colorScheme);
+          return RecipeCard(
+            recipe: _bookmarkedRecipes[index],
+            onTap: () async {
+              await context.push(
+                '/recipe/detail',
+                extra: _bookmarkedRecipes[index],
+              );
+              _loadBookmarkedRecipes();
+            },
+          );
         },
       ),
     );
   }
 
-  Widget _buildHistoryTab(ColorScheme colorScheme) {
+  Widget _buildHistoryTab() {
     if (_isLoadingHistory) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -628,24 +511,12 @@ class _RecipeTabState extends State<RecipeTab> {
       return RefreshIndicator(
         onRefresh: _loadHistory,
         child: ListView(
-          children: [
-            const SizedBox(height: 120),
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.history, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    '요리 기록이 없어요',
-                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '레시피를 요리하면 기록이 남습니다',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[400]),
-                  ),
-                ],
-              ),
+          children: const [
+            SizedBox(height: 80),
+            EmptyState(
+              emoji: '📝',
+              title: '요리 기록이 없어요',
+              subtitle: '레시피를 요리하면 기록이 남습니다',
             ),
           ],
         ),
@@ -655,7 +526,7 @@ class _RecipeTabState extends State<RecipeTab> {
     return RefreshIndicator(
       onRefresh: _loadHistory,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         itemCount: _historyList.length,
         itemBuilder: (context, index) {
           final item = _historyList[index];
@@ -663,13 +534,35 @@ class _RecipeTabState extends State<RecipeTab> {
               ? DateTime.parse(item['cooked_at'])
               : DateTime.now();
 
-          return Card(
-            margin: const EdgeInsets.only(bottom: 8),
-            child: ListTile(
-              leading: const Icon(Icons.restaurant_menu),
-              title: Text(item['recipe_title'] ?? ''),
-              subtitle: Text(
-                '${createdAt.year}.${createdAt.month.toString().padLeft(2, '0')}.${createdAt.day.toString().padLeft(2, '0')}',
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Card(
+              child: ListTile(
+                leading: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: const Icon(
+                    Icons.restaurant_menu,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                ),
+                title: Text(
+                  item['recipe_title'] ?? '',
+                  style: AppTypography.labelLarge.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  '${createdAt.year}.${createdAt.month.toString().padLeft(2, '0')}.${createdAt.day.toString().padLeft(2, '0')}',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ),
             ),
           );
@@ -677,4 +570,12 @@ class _RecipeTabState extends State<RecipeTab> {
       ),
     );
   }
+}
+
+class _ConditionOption {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _ConditionOption(this.label, this.isSelected, this.onTap);
 }

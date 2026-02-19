@@ -7,6 +7,9 @@ import '../services/auth_service.dart';
 import '../services/chat_service.dart';
 import '../services/gemini_service.dart';
 import '../services/ingredient_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 /// AI 셰프 채팅 화면
 class ChatScreen extends StatefulWidget {
@@ -139,8 +142,7 @@ class _ChatScreenState extends State<ChatScreen> {
         throw Exception('API 키가 설정되지 않았습니다.');
       }
 
-      final ingredientNames =
-          _ingredients.map((i) => i.name).toList();
+      final ingredientNames = _ingredients.map((i) => i.name).toList();
 
       final chefConfig = AIChefConfig(
         name: _currentChef.name,
@@ -169,7 +171,6 @@ class _ChatScreenState extends State<ChatScreen> {
           _isLoading = false;
         });
 
-        // DB 저장 (fire-and-forget)
         _saveToDB(userMessage, assistantMessage);
       }
     } catch (e) {
@@ -194,7 +195,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       await _chatService.saveMessages([user, assistant]);
     } catch (_) {
-      // 저장 실패 시 무시 (UX에 영향 없음)
+      // 저장 실패 시 무시
     }
   }
 
@@ -212,38 +213,69 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final chefColor = Color(_currentChef.primaryColor);
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('${_currentChef.emoji} ${_currentChef.name}'),
-        backgroundColor: chefColor.withValues(alpha: 0.1),
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: chefColor.withValues(alpha: 0.1),
+              child: Text(
+                _currentChef.emoji,
+                style: const TextStyle(fontSize: 16),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _currentChef.name,
+                  style: AppTypography.labelLarge.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  _currentChef.title,
+                  style: AppTypography.labelSmall.copyWith(
+                    color: AppColors.textTertiary,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        backgroundColor: chefColor.withValues(alpha: 0.05),
       ),
       body: Column(
         children: [
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg,
+                vertical: AppSpacing.sm,
+              ),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                return _buildMessageBubble(_messages[index], colorScheme);
+                return _buildMessageBubble(_messages[index]);
               },
             ),
           ),
-          _buildInputBar(colorScheme),
+          _buildInputBar(),
         ],
       ),
     );
   }
 
-  Widget _buildMessageBubble(ChatMessage message, ColorScheme colorScheme) {
+  Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.role == MessageRole.user;
     final chefColor = Color(_currentChef.primaryColor);
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         mainAxisAlignment:
             isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -258,20 +290,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 style: const TextStyle(fontSize: 16),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 10,
+              ),
               decoration: BoxDecoration(
-                color: isUser
-                    ? colorScheme.primary
-                    : Colors.grey[200],
+                color: isUser ? chefColor : AppColors.surfaceDim,
                 borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(16),
-                  topRight: const Radius.circular(16),
-                  bottomLeft: Radius.circular(isUser ? 16 : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : 16),
+                  topLeft: const Radius.circular(AppRadius.lg),
+                  topRight: const Radius.circular(AppRadius.lg),
+                  bottomLeft: Radius.circular(isUser ? AppRadius.lg : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : AppRadius.lg),
                 ),
               ),
               child: message.isLoading
@@ -279,13 +312,14 @@ class _ChatScreenState extends State<ChatScreen> {
                   : Text(
                       message.content,
                       style: TextStyle(
-                        color: isUser ? Colors.white : Colors.black87,
+                        color:
+                            isUser ? Colors.white : AppColors.textPrimary,
                         fontSize: 15,
                       ),
                     ),
             ),
           ),
-          if (isUser) const SizedBox(width: 8),
+          if (isUser) const SizedBox(width: AppSpacing.sm),
         ],
       ),
     );
@@ -308,19 +342,19 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  Widget _buildInputBar(ColorScheme colorScheme) {
+  Widget _buildInputBar() {
     return Container(
       padding: EdgeInsets.only(
-        left: 16,
-        right: 8,
-        top: 8,
-        bottom: MediaQuery.of(context).padding.bottom + 8,
+        left: AppSpacing.lg,
+        right: AppSpacing.sm,
+        top: AppSpacing.sm,
+        bottom: MediaQuery.of(context).padding.bottom + AppSpacing.sm,
       ),
       decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
+        color: AppColors.cardBackground,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -334,13 +368,21 @@ class _ChatScreenState extends State<ChatScreen> {
               decoration: InputDecoration(
                 hintText: '${_currentChef.name}에게 물어보세요...',
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
+                  borderSide: BorderSide.none,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey[100],
+                fillColor: AppColors.inputFill,
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
+                  horizontal: AppSpacing.lg,
                   vertical: 10,
                 ),
               ),
@@ -351,7 +393,7 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: AppSpacing.xs),
           IconButton(
             onPressed: _isLoading
                 ? null
@@ -361,9 +403,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   },
             icon: Icon(
               Icons.send_rounded,
-              color: _isLoading
-                  ? Colors.grey
-                  : colorScheme.primary,
+              color: _isLoading ? AppColors.textTertiary : AppColors.primary,
             ),
           ),
         ],
@@ -422,8 +462,8 @@ class _DotIndicatorState extends State<_DotIndicator>
           child: Container(
             width: 6,
             height: 6,
-            decoration: BoxDecoration(
-              color: Colors.grey[500],
+            decoration: const BoxDecoration(
+              color: AppColors.textTertiary,
               shape: BoxShape.circle,
             ),
           ),

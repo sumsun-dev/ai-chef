@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 /// 레시피 상세 화면
 class RecipeDetailScreen extends StatefulWidget {
@@ -82,8 +85,6 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(_recipe.title),
@@ -103,7 +104,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           IconButton(
             icon: Icon(
               _recipe.isBookmarked ? Icons.bookmark : Icons.bookmark_border,
-              color: _recipe.isBookmarked ? colorScheme.primary : null,
+              color: _recipe.isBookmarked ? AppColors.primary : null,
             ),
             onPressed: _toggleBookmark,
             tooltip: '북마크',
@@ -114,46 +115,44 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildHeader(colorScheme),
-            _buildBadges(colorScheme),
+            _buildHeader(),
+            _buildBadges(),
             const Divider(height: 32),
-            _buildIngredientsSection(colorScheme),
+            _buildIngredientsSection(),
             const Divider(height: 32),
-            _buildInstructionsSection(colorScheme),
+            _buildInstructionsSection(),
             if (_recipe.nutrition != null) ...[
               const Divider(height: 32),
-              _buildNutritionSection(colorScheme),
+              _buildNutritionSection(),
             ],
             if (_recipe.chefNote != null && _recipe.chefNote!.isNotEmpty) ...[
               const Divider(height: 32),
-              _buildChefNote(colorScheme),
+              _buildChefNote(),
             ],
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xxxl),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader(ColorScheme colorScheme) {
+  Widget _buildHeader() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             _recipe.title,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+            style: AppTypography.headlineLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             _recipe.description,
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey[600],
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
@@ -162,9 +161,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildBadges(ColorScheme colorScheme) {
+  Widget _buildBadges() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
         children: [
           _buildBadge(
@@ -172,24 +171,24 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             label: _difficultyLabel(_recipe.difficulty),
             color: _difficultyColor(_recipe.difficulty),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           _buildBadge(
             icon: Icons.timer_outlined,
             label: '${_recipe.cookingTime}분',
-            color: Colors.blue,
+            color: AppColors.info,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: AppSpacing.sm),
           _buildBadge(
             icon: Icons.people_outline,
             label: '${_recipe.servings}인분',
-            color: Colors.teal,
+            color: const Color(0xFF009688),
           ),
           if (_recipe.cuisine.isNotEmpty) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             _buildBadge(
               icon: Icons.restaurant,
               label: _recipe.cuisine,
-              color: Colors.purple,
+              color: const Color(0xFF9C27B0),
             ),
           ],
         ],
@@ -206,7 +205,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
         border: Border.all(color: color.withValues(alpha: 0.3)),
       ),
       child: Row(
@@ -227,40 +226,37 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildIngredientsSection(ColorScheme colorScheme) {
+  Widget _buildIngredientsSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.shopping_basket_outlined, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.shopping_basket_outlined, size: 20,
+                  color: AppColors.textPrimary),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 '재료',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.headlineSmall.copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           ..._recipe.ingredients.map(
-            (ingredient) => _buildIngredientRow(ingredient, colorScheme),
+            (ingredient) => _buildIngredientRow(ingredient),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildIngredientRow(
-    RecipeIngredient ingredient,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildIngredientRow(RecipeIngredient ingredient) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Row(
         children: [
           Icon(
@@ -268,33 +264,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 ? Icons.check_circle
                 : Icons.circle_outlined,
             size: 18,
-            color: ingredient.isAvailable ? Colors.green : Colors.grey[400],
+            color: ingredient.isAvailable
+                ? AppColors.success
+                : AppColors.textTertiary,
           ),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               ingredient.name,
-              style: TextStyle(
-                fontSize: 15,
-                color: ingredient.isAvailable ? null : Colors.grey[600],
+              style: AppTypography.bodyLarge.copyWith(
+                color: ingredient.isAvailable
+                    ? AppColors.textPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
           Text(
             '${ingredient.quantity} ${ingredient.unit}',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textTertiary,
             ),
           ),
           if (ingredient.substitute != null) ...[
-            const SizedBox(width: 8),
+            const SizedBox(width: AppSpacing.sm),
             Tooltip(
               message: '대체: ${ingredient.substitute}',
-              child: Icon(
+              child: const Icon(
                 Icons.swap_horiz,
                 size: 16,
-                color: colorScheme.primary,
+                color: AppColors.primary,
               ),
             ),
           ],
@@ -303,45 +301,42 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildInstructionsSection(ColorScheme colorScheme) {
+  Widget _buildInstructionsSection() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.format_list_numbered, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.format_list_numbered, size: 20,
+                  color: AppColors.textPrimary),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 '조리 순서',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.headlineSmall.copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           ..._recipe.instructions.map(
-            (step) => _buildInstructionCard(step, colorScheme),
+            (step) => _buildInstructionCard(step),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInstructionCard(
-    RecipeInstruction step,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildInstructionCard(RecipeInstruction step) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
+        color: AppColors.surfaceDim,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -351,8 +346,8 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               Container(
                 width: 28,
                 height: 28,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Center(
@@ -370,9 +365,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               Expanded(
                 child: Text(
                   step.title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
+                  style: AppTypography.labelLarge.copyWith(
                     fontSize: 15,
+                    color: AppColors.textPrimary,
                   ),
                 ),
               ),
@@ -383,36 +378,35 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                    color: AppColors.info.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   child: Text(
                     '${step.time}분',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Colors.blue,
+                      color: AppColors.info,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             step.description,
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[700],
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
               height: 1.5,
             ),
           ),
           if (step.tips != null && step.tips!.isNotEmpty) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: Colors.amber.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
+                color: AppColors.warning.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(AppRadius.sm),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,7 +416,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   Expanded(
                     child: Text(
                       step.tips!,
-                      style: const TextStyle(fontSize: 13),
+                      style: AppTypography.bodySmall.copyWith(
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                 ],
@@ -434,34 +430,42 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildNutritionSection(ColorScheme colorScheme) {
+  Widget _buildNutritionSection() {
     final nutrition = _recipe.nutrition!;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.bar_chart, size: 20),
-              SizedBox(width: 8),
+              const Icon(Icons.bar_chart, size: 20,
+                  color: AppColors.textPrimary),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 '영양 정보',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+                style: AppTypography.headlineSmall.copyWith(
+                  color: AppColors.textPrimary,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              _buildNutritionItem('칼로리', '${nutrition.calories}', 'kcal', Colors.red),
-              _buildNutritionItem('단백질', '${nutrition.protein}', 'g', Colors.blue),
-              _buildNutritionItem('탄수화물', '${nutrition.carbs}', 'g', Colors.orange),
-              _buildNutritionItem('지방', '${nutrition.fat}', 'g', Colors.purple),
+              _buildNutritionItem(
+                '칼로리', '${nutrition.calories}', 'kcal', AppColors.error,
+              ),
+              _buildNutritionItem(
+                '단백질', '${nutrition.protein}', 'g', AppColors.info,
+              ),
+              _buildNutritionItem(
+                '탄수화물', '${nutrition.carbs}', 'g', AppColors.warning,
+              ),
+              _buildNutritionItem(
+                '지방', '${nutrition.fat}', 'g', const Color(0xFF9C27B0),
+              ),
             ],
           ),
         ],
@@ -478,18 +482,20 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     return Expanded(
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 4),
-        padding: const EdgeInsets.symmetric(vertical: 12),
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
         ),
         child: Column(
           children: [
             Text(
               label,
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: AppSpacing.xs),
             Text(
               value,
               style: TextStyle(
@@ -500,7 +506,9 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             ),
             Text(
               unit,
-              style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+              style: AppTypography.labelSmall.copyWith(
+                color: AppColors.textTertiary,
+              ),
             ),
           ],
         ),
@@ -508,22 +516,22 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
     );
   }
 
-  Widget _buildChefNote(ColorScheme colorScheme) {
+  Widget _buildChefNote() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              colorScheme.primary.withValues(alpha: 0.08),
-              colorScheme.primary.withValues(alpha: 0.03),
+              AppColors.primary.withValues(alpha: 0.08),
+              AppColors.primary.withValues(alpha: 0.03),
             ],
           ),
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: colorScheme.primary.withValues(alpha: 0.2),
+            color: AppColors.primary.withValues(alpha: 0.2),
           ),
         ),
         child: Column(
@@ -532,23 +540,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
             Row(
               children: [
                 const Text('👨‍🍳', style: TextStyle(fontSize: 18)),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   '셰프 노트',
-                  style: TextStyle(
+                  style: AppTypography.labelLarge.copyWith(
                     fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: colorScheme.primary,
+                    color: AppColors.primary,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               _recipe.chefNote!,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
                 height: 1.6,
               ),
             ),
@@ -572,11 +578,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   Color _difficultyColor(RecipeDifficulty difficulty) {
     switch (difficulty) {
       case RecipeDifficulty.easy:
-        return Colors.green;
+        return AppColors.success;
       case RecipeDifficulty.medium:
-        return Colors.orange;
+        return AppColors.warning;
       case RecipeDifficulty.hard:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 }

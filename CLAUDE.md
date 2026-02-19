@@ -21,9 +21,11 @@ ai-chef/
 │       └── lib/      # Utilities, Gemini client
 ├── mobile/           # Flutter mobile app
 │   └── lib/
+│       ├── components/ # Reusable UI widgets
 │       ├── models/   # Data models
 │       ├── screens/  # Screen components
-│       └── services/ # Business logic
+│       ├── services/ # Business logic
+│       └── theme/    # Design tokens (colors, typography, spacing, theme)
 └── docs/             # Docs (PRD, schema, cost estimation)
 ```
 

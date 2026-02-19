@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
+
 /// 온보딩 Step 2a: 요리 실력 선택
 class StepSkillLevel extends StatelessWidget {
   final String selectedLevel;
@@ -20,40 +24,44 @@ class StepSkillLevel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
           Text(
             '요리 실력이\n어느 정도인가요?',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: colorScheme.onSurface,
+            style: AppTypography.headlineLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text(
             '맞춤 레시피를 위해 알려주세요',
-            style: TextStyle(
-              fontSize: 14,
-              color: colorScheme.onSurfaceVariant,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: AppSpacing.xxxl),
           ...List.generate(_levels.length, (index) {
             final level = _levels[index];
             final isSelected = selectedLevel == level.key;
             return Padding(
-              padding: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _buildSkillCard(context, level, isSelected),
             );
           }),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.xxl),
+          Center(
+            child: Text(
+              '나머지 설정은 언제든 프로필에서 변경할 수 있어요',
+              style: AppTypography.bodySmall.copyWith(
+                color: AppColors.textTertiary,
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
     );
@@ -64,56 +72,49 @@ class StepSkillLevel extends StatelessWidget {
     _SkillOption level,
     bool isSelected,
   ) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return GestureDetector(
       onTap: () => onChanged(level.key),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           color: isSelected
-              ? colorScheme.primaryContainer
-              : colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surfaceDim,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
           border: isSelected
-              ? Border.all(color: colorScheme.primary, width: 2)
-              : null,
+              ? Border.all(color: AppColors.primary, width: 2)
+              : Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
             Text(level.emoji, style: const TextStyle(fontSize: 32)),
-            const SizedBox(width: 16),
+            const SizedBox(width: AppSpacing.lg),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     level.title,
-                    style: TextStyle(
+                    style: AppTypography.labelLarge.copyWith(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
                       color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                          : colorScheme.onSurface,
+                          ? AppColors.primary
+                          : AppColors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     level.subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isSelected
-                          ? colorScheme.onPrimaryContainer
-                              .withValues(alpha: 0.8)
-                          : colorScheme.onSurfaceVariant,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textSecondary,
                     ),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: colorScheme.primary),
+              const Icon(Icons.check_circle, color: AppColors.primary),
           ],
         ),
       ),

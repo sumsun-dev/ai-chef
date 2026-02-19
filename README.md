@@ -9,7 +9,7 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 ## 핵심 기능
 
 - **나만의 AI 셰프** - 이름, 성격, 전문 분야를 커스터마이징한 개인 셰프
-- **5단계 온보딩** - 요리 실력, 시나리오, 도구, 선호도, 셰프 선택까지 멀티스텝 설정
+- **3단계 온보딩** - AI 셰프 선택, 요리 실력 설정, 완료까지 간결한 멀티스텝
 - **재료 관리** - 영수증 OCR 자동 등록, 유통기한 알림, 검색/카테고리 필터/정렬
 - **맞춤 레시피** - 보유 재료와 도구 기반 AI 레시피 추천, 저장/북마크
 - **AI 채팅** - 셰프와 실시간 대화, DB 기록 저장/복원
@@ -65,13 +65,15 @@ ai-chef/
 │           └── __tests__/  # Vitest 단위 테스트
 ├── mobile/                 # Flutter 모바일 앱
 │   ├── lib/
+│   │   ├── components/     # 공통 UI 컴포넌트 (ChefGreetingCard, RecipeCard 등)
 │   │   ├── models/         # Ingredient, Recipe, Chef, ChatMessage 등 데이터 모델
 │   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, Profile)
 │   │   │   ├── tabs/       # Bottom navigation 탭 화면
-│   │   │   ├── onboarding/ # 5단계 온보딩 (8페이지 PageView)
+│   │   │   ├── onboarding/ # 3단계 온보딩 (셰프 선택 → 실력 → 완료)
 │   │   │   └── profile/    # 프로필 관리 (셰프/도구/설정)
-│   │   └── services/       # Supabase CRUD, Gemini, Chat, Recipe 서비스
-│   └── test/               # 단위 테스트 (64개)
+│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe 서비스
+│   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
+│   └── test/               # 위젯/단위 테스트 (157개)
 ├── supabase/
 │   └── migrations/         # DB 마이그레이션 (source of truth)
 ├── docs/                   # PRD, 비용 추정, 설계 문서

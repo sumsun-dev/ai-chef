@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -123,29 +123,70 @@ class AuthService {
     final user = currentUser;
     if (user == null) throw Exception('로그인이 필요합니다.');
 
-    // 1. user_profiles 업데이트
-    await _supabase.from('user_profiles').update({
-      'skill_level': state.skillLevel,
-      'scenarios': state.scenarios,
-      'time_preference': state.timePreference,
-      'budget_preference': state.budgetPreference,
-      'primary_chef_id': state.selectedPresetId ?? 'baek',
-      'ai_chef_name': state.chefName,
-      'ai_chef_personality': state.personality,
-      'ai_chef_expertise': state.expertise,
-      'ai_chef_formality': state.formality,
-      'ai_chef_emoji_usage': state.emojiUsage,
-      'ai_chef_technicality': state.technicality,
-    }).eq('id', user.id);
+    debugPrint('[Onboarding] saveOnboardingData: userId=${user.id}, chefName=${state.chefName}, skillLevel=${state.skillLevel}');
+
+    // 0. user_profiles 행 존재 확인
+    final existing = await _supabase
+        .from('user_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+    debugPrint('[Onboarding] existing profile row: $existing');
+
+    if (existing == null) {
+      // 행이 없으면 INSERT
+      debugPrint('[Onboarding] No profile row found, inserting...');
+      await _supabase.from('user_profiles').insert({
+        'id': user.id,
+        'skill_level': state.skillLevel,
+        'scenarios': state.scenarios,
+        'time_preference': state.timePreference,
+        'budget_preference': state.budgetPreference,
+        'primary_chef_id': state.selectedPresetId ?? 'baek',
+        'ai_chef_name': state.chefName,
+        'ai_chef_personality': state.personality,
+        'ai_chef_expertise': state.expertise,
+        'ai_chef_formality': state.formality,
+        'ai_chef_emoji_usage': state.emojiUsage,
+        'ai_chef_technicality': state.technicality,
+      });
+    } else {
+      // 행이 있으면 UPDATE
+      debugPrint('[Onboarding] Profile row exists, updating...');
+      await _supabase.from('user_profiles').update({
+        'skill_level': state.skillLevel,
+        'scenarios': state.scenarios,
+        'time_preference': state.timePreference,
+        'budget_preference': state.budgetPreference,
+        'primary_chef_id': state.selectedPresetId ?? 'baek',
+        'ai_chef_name': state.chefName,
+        'ai_chef_personality': state.personality,
+        'ai_chef_expertise': state.expertise,
+        'ai_chef_formality': state.formality,
+        'ai_chef_emoji_usage': state.emojiUsage,
+        'ai_chef_technicality': state.technicality,
+      }).eq('id', user.id);
+    }
+
+    // 검증: 저장 결과 확인
+    final verify = await _supabase
+        .from('user_profiles')
+        .select('ai_chef_name')
+        .eq('id', user.id)
+        .maybeSingle();
+    debugPrint('[Onboarding] verify after save: $verify');
 
     // 2. cooking_tools upsert
     for (final entry in state.tools.entries) {
-      await _supabase.from('cooking_tools').upsert({
-        'user_id': user.id,
-        'tool_key': entry.key,
-        'tool_name': OnboardingState.toolKeyToName[entry.key] ?? entry.key,
-        'is_available': entry.value,
-      });
+      await _supabase.from('cooking_tools').upsert(
+        {
+          'user_id': user.id,
+          'tool_key': entry.key,
+          'tool_name': OnboardingState.toolKeyToName[entry.key] ?? entry.key,
+          'is_available': entry.value,
+        },
+        onConflict: 'user_id,tool_key',
+      );
     }
 
     // 3. ingredients 등록 (첫 냉장고)

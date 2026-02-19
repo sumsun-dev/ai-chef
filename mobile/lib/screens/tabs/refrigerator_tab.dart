@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../components/category_emoji.dart';
+import '../../components/empty_state.dart';
+import '../../components/expiry_badge.dart';
 import '../../models/ingredient.dart';
 import '../../services/ingredient_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 
 /// 냉장고 탭
 class RefrigeratorTab extends StatefulWidget {
@@ -17,22 +23,29 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   bool _isLoading = true;
   String _selectedLocation = 'all';
   String? _selectedCategory;
-  String _sortBy = 'expiry'; // 'expiry', 'name', 'category'
+  String _sortBy = 'expiry';
   bool _isSearching = false;
   String _searchQuery = '';
   final TextEditingController _searchController = TextEditingController();
 
+  static const _locations = [
+    ('all', '전체', '📋'),
+    ('fridge', '냉장', '❄️'),
+    ('freezer', '냉동', '🧊'),
+    ('pantry', '실온', '📦'),
+  ];
+
   static const _categories = [
-    ('all', '전체'),
-    ('vegetable', '채소'),
-    ('fruit', '과일'),
-    ('meat', '고기'),
-    ('seafood', '해산물'),
-    ('dairy', '유제품'),
-    ('egg', '계란'),
-    ('grain', '곡류'),
-    ('seasoning', '양념'),
-    ('other', '기타'),
+    ('all', '전체', '🍽️'),
+    ('vegetable', '채소', '🥬'),
+    ('fruit', '과일', '🍎'),
+    ('meat', '고기', '🍖'),
+    ('seafood', '해산물', '🐟'),
+    ('dairy', '유제품', '🥛'),
+    ('egg', '계란', '🥚'),
+    ('grain', '곡류', '🍚'),
+    ('seasoning', '양념', '🧂'),
+    ('other', '기타', '🍽️'),
   ];
 
   @override
@@ -63,14 +76,13 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   List<Ingredient> get _filteredIngredients {
     var result = List<Ingredient>.from(_ingredients);
 
-    // 검색 필터
     if (_searchQuery.isNotEmpty) {
       result = result
-          .where((i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase()))
+          .where(
+              (i) => i.name.toLowerCase().contains(_searchQuery.toLowerCase()))
           .toList();
     }
 
-    // 위치 필터
     if (_selectedLocation != 'all') {
       result = result.where((i) {
         switch (_selectedLocation) {
@@ -86,12 +98,10 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
       }).toList();
     }
 
-    // 카테고리 필터
     if (_selectedCategory != null && _selectedCategory != 'all') {
       result = result.where((i) => i.category == _selectedCategory).toList();
     }
 
-    // 정렬
     switch (_sortBy) {
       case 'expiry':
         result.sort((a, b) => a.expiryDate.compareTo(b.expiryDate));
@@ -117,8 +127,6 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
       appBar: AppBar(
         title: _isSearching
@@ -128,6 +136,10 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                 decoration: const InputDecoration(
                   hintText: '재료 검색...',
                   border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  fillColor: Colors.transparent,
+                  filled: true,
                 ),
                 onChanged: (value) => setState(() => _searchQuery = value),
               )
@@ -149,39 +161,9 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
             icon: const Icon(Icons.sort),
             onSelected: (value) => setState(() => _sortBy = value),
             itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'expiry',
-                child: Row(
-                  children: [
-                    if (_sortBy == 'expiry')
-                      Icon(Icons.check, size: 18, color: colorScheme.primary),
-                    if (_sortBy == 'expiry') const SizedBox(width: 8),
-                    const Text('유통기한순'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'name',
-                child: Row(
-                  children: [
-                    if (_sortBy == 'name')
-                      Icon(Icons.check, size: 18, color: colorScheme.primary),
-                    if (_sortBy == 'name') const SizedBox(width: 8),
-                    const Text('이름순'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'category',
-                child: Row(
-                  children: [
-                    if (_sortBy == 'category')
-                      Icon(Icons.check, size: 18, color: colorScheme.primary),
-                    if (_sortBy == 'category') const SizedBox(width: 8),
-                    const Text('카테고리순'),
-                  ],
-                ),
-              ),
+              _buildSortMenuItem('expiry', '유통기한순'),
+              _buildSortMenuItem('name', '이름순'),
+              _buildSortMenuItem('category', '카테고리순'),
             ],
           ),
         ],
@@ -192,30 +174,20 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
               onRefresh: _loadIngredients,
               child: CustomScrollView(
                 slivers: [
-                  // 유통기한 임박 섹션
                   if (_expiringIngredients.isNotEmpty)
-                    SliverToBoxAdapter(
-                      child: _buildExpiryAlert(),
-                    ),
+                    SliverToBoxAdapter(child: _buildExpiryAlert()),
 
-                  // 위치 필터
-                  SliverToBoxAdapter(
-                    child: _buildLocationFilter(colorScheme),
-                  ),
+                  // 위치 필터 — SegmentedButton 스타일
+                  SliverToBoxAdapter(child: _buildLocationFilter()),
 
-                  // 카테고리 필터
-                  SliverToBoxAdapter(
-                    child: _buildCategoryFilter(colorScheme),
-                  ),
+                  // 카테고리 필터 — 이모지+텍스트 칩
+                  SliverToBoxAdapter(child: _buildCategoryFilter()),
 
-                  // 재료 목록
                   if (_filteredIngredients.isEmpty)
-                    SliverFillRemaining(
-                      child: _buildEmptyState(),
-                    )
+                    SliverFillRemaining(child: _buildEmptyState())
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.lg),
                       sliver: SliverList(
                         delegate: SliverChildBuilderDelegate(
                           (context, index) {
@@ -237,40 +209,57 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
     );
   }
 
+  PopupMenuItem<String> _buildSortMenuItem(String value, String label) {
+    return PopupMenuItem(
+      value: value,
+      child: Row(
+        children: [
+          if (_sortBy == value)
+            const Icon(Icons.check, size: 18, color: AppColors.primary),
+          if (_sortBy == value) const SizedBox(width: 8),
+          Text(label),
+        ],
+      ),
+    );
+  }
+
   Widget _buildExpiryAlert() {
     return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.all(AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.orange.shade200),
+        color: AppColors.expiryCritical.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.expiryCritical.withValues(alpha: 0.2),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(Icons.warning_amber, color: Colors.orange.shade700),
-              const SizedBox(width: 8),
+              Icon(Icons.warning_amber,
+                  color: AppColors.expiryCritical, size: 20),
+              const SizedBox(width: AppSpacing.sm),
               Text(
                 '유통기한 임박 (${_expiringIngredients.length})',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange.shade700,
+                style: AppTypography.labelLarge.copyWith(
+                  color: AppColors.expiryCritical,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: AppSpacing.sm,
+            runSpacing: AppSpacing.xs,
             children: _expiringIngredients.take(5).map((i) {
               return Chip(
                 label: Text('${i.name} (${i.dDayString})'),
-                backgroundColor: Colors.orange.shade100,
-                labelStyle: const TextStyle(fontSize: 12),
+                backgroundColor:
+                    AppColors.expiryCritical.withValues(alpha: 0.1),
+                labelStyle: AppTypography.bodySmall,
                 visualDensity: VisualDensity.compact,
               );
             }).toList(),
@@ -280,62 +269,63 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
     );
   }
 
-  Widget _buildLocationFilter(ColorScheme colorScheme) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          _buildFilterChip('all', '전체', colorScheme),
-          const SizedBox(width: 8),
-          _buildFilterChip('fridge', '냉장', colorScheme),
-          const SizedBox(width: 8),
-          _buildFilterChip('freezer', '냉동', colorScheme),
-          const SizedBox(width: 8),
-          _buildFilterChip('pantry', '실온', colorScheme),
-        ],
+  Widget _buildLocationFilter() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
+      child: SegmentedButton<String>(
+        segments: _locations.map((entry) {
+          final (value, label, emoji) = entry;
+          return ButtonSegment<String>(
+            value: value,
+            label: Text('$emoji $label'),
+          );
+        }).toList(),
+        selected: {_selectedLocation},
+        onSelectionChanged: (selected) {
+          setState(() => _selectedLocation = selected.first);
+        },
+        style: ButtonStyle(
+          visualDensity: VisualDensity.compact,
+          textStyle: WidgetStateProperty.all(
+            const TextStyle(fontSize: 13, fontFamily: 'Pretendard'),
+          ),
+        ),
       ),
     );
   }
 
-  Widget _buildFilterChip(String value, String label, ColorScheme colorScheme) {
-    final isSelected = _selectedLocation == value;
-    return FilterChip(
-      label: Text(label),
-      selected: isSelected,
-      onSelected: (selected) {
-        setState(() {
-          _selectedLocation = selected ? value : 'all';
-        });
-      },
-      selectedColor: colorScheme.primaryContainer,
-      checkmarkColor: colorScheme.primary,
-    );
-  }
-
-  Widget _buildCategoryFilter(ColorScheme colorScheme) {
+  Widget _buildCategoryFilter() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.sm,
+      ),
       child: Row(
         children: _categories.map((entry) {
-          final (value, label) = entry;
+          final (value, label, emoji) = entry;
           final isSelected =
               (_selectedCategory == null && value == 'all') ||
-              _selectedCategory == value;
+                  _selectedCategory == value;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: AppSpacing.sm),
             child: FilterChip(
+              avatar: Text(emoji, style: const TextStyle(fontSize: 14)),
               label: Text(label),
               selected: isSelected,
               onSelected: (selected) {
                 setState(() {
-                  _selectedCategory = selected && value != 'all' ? value : null;
+                  _selectedCategory =
+                      selected && value != 'all' ? value : null;
                 });
               },
-              selectedColor: colorScheme.secondaryContainer,
-              checkmarkColor: colorScheme.secondary,
-              labelStyle: TextStyle(fontSize: 12, color: isSelected ? colorScheme.secondary : null),
+              labelStyle: TextStyle(
+                fontSize: 12,
+                color: isSelected ? AppColors.primary : AppColors.textSecondary,
+              ),
             ),
           );
         }).toList(),
@@ -344,120 +334,56 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.kitchen,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            _searchQuery.isNotEmpty ? '검색 결과가 없어요' : '냉장고가 비어있어요',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            _searchQuery.isNotEmpty
-                ? '다른 키워드로 검색해 보세요'
-                : '재료를 추가해서 맞춤 레시피를 받아보세요',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-        ],
-      ),
+    return EmptyState(
+      emoji: _searchQuery.isNotEmpty ? '🔍' : '🧊',
+      title: _searchQuery.isNotEmpty ? '검색 결과가 없어요' : '냉장고가 비어있어요',
+      subtitle: _searchQuery.isNotEmpty
+          ? '다른 키워드로 검색해 보세요'
+          : '재료를 추가해서 맞춤 레시피를 받아보세요',
+      actionText: _searchQuery.isEmpty ? '재료 추가하기' : null,
+      onAction: _searchQuery.isEmpty ? _showAddIngredientSheet : null,
     );
   }
 
   Widget _buildIngredientCard(Ingredient ingredient) {
-    final expiryColor = _getExpiryColor(ingredient.expiryStatus);
+    final emoji = getCategoryEmoji(ingredient.category);
+    final color = getExpiryColor(ingredient.expiryStatus);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: Container(
-          width: 48,
-          height: 48,
-          decoration: BoxDecoration(
-            color: expiryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Center(
-            child: Text(
-              _getCategoryEmoji(ingredient.category),
-              style: const TextStyle(fontSize: 24),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Card(
+        child: ListTile(
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Center(
+              child: Text(emoji, style: const TextStyle(fontSize: 24)),
             ),
           ),
-        ),
-        title: Text(
-          ingredient.name,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
-        subtitle: Text(
-          '${ingredient.quantity} ${ingredient.unit} · ${ingredient.storageLocation.displayName}',
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: expiryColor.withValues(alpha: 0.1),
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            ingredient.dDayString,
-            style: TextStyle(
-              color: expiryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
+          title: Text(
+            ingredient.name,
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
           ),
+          subtitle: Text(
+            '${ingredient.quantity} ${ingredient.unit} · ${ingredient.storageLocation.displayName}',
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          trailing: ExpiryBadge(
+            status: ingredient.expiryStatus,
+            dDayString: ingredient.dDayString,
+          ),
+          onTap: () => _showEditIngredientSheet(ingredient),
         ),
-        onTap: () => _showEditIngredientSheet(ingredient),
       ),
     );
-  }
-
-  Color _getExpiryColor(ExpiryStatus status) {
-    switch (status) {
-      case ExpiryStatus.expired:
-        return Colors.red;
-      case ExpiryStatus.critical:
-        return Colors.orange;
-      case ExpiryStatus.warning:
-        return Colors.blue;
-      case ExpiryStatus.safe:
-        return Colors.green;
-    }
-  }
-
-  String _getCategoryEmoji(String? category) {
-    switch (category) {
-      case 'vegetable':
-        return '🥬';
-      case 'fruit':
-        return '🍎';
-      case 'meat':
-        return '🍖';
-      case 'seafood':
-        return '🐟';
-      case 'dairy':
-        return '🥛';
-      case 'egg':
-        return '🥚';
-      case 'grain':
-        return '🍚';
-      case 'seasoning':
-        return '🧂';
-      default:
-        return '🍽️';
-    }
   }
 
   void _showAddIngredientSheet() {
@@ -470,30 +396,18 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
         minChildSize: 0.3,
         expand: false,
         builder: (context, scrollController) {
-          return Container(
-            padding: const EdgeInsets.all(16),
+          return Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
+                Text(
                   '재료 추가',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                  style: AppTypography.headlineMedium.copyWith(
+                    color: AppColors.textPrimary,
                   ),
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xxl),
                 Row(
                   children: [
                     Expanded(
@@ -506,7 +420,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                         },
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: AppSpacing.lg),
                     Expanded(
                       child: _buildAddOption(
                         icon: Icons.edit,
@@ -534,28 +448,27 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
     required String label,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 48, color: Colors.grey[700]),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[700],
+    return Material(
+      color: AppColors.surfaceDim,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: Column(
+            children: [
+              Icon(icon, size: 48, color: AppColors.textSecondary),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -564,8 +477,8 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   void _showEditIngredientSheet(Ingredient ingredient) {
     showModalBottomSheet(
       context: context,
-      builder: (sheetContext) => Container(
-        padding: const EdgeInsets.all(16),
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -582,8 +495,9 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
               },
             ),
             ListTile(
-              leading: const Icon(Icons.delete, color: Colors.red),
-              title: const Text('삭제', style: TextStyle(color: Colors.red)),
+              leading: const Icon(Icons.delete, color: AppColors.error),
+              title:
+                  const Text('삭제', style: TextStyle(color: AppColors.error)),
               onTap: () async {
                 Navigator.pop(sheetContext);
                 final confirmed = await showDialog<bool>(
@@ -598,8 +512,9 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                       ),
                       TextButton(
                         onPressed: () => Navigator.pop(ctx, true),
-                        style:
-                            TextButton.styleFrom(foregroundColor: Colors.red),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.error,
+                        ),
                         child: const Text('삭제'),
                       ),
                     ],

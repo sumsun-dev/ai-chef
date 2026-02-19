@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/ingredient.dart';
 import 'models/recipe.dart';
+import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
@@ -36,12 +38,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoginRoute = state.matchedLocation == '/login';
       final isOnboardingRoute = state.matchedLocation == '/onboarding';
 
+      debugPrint('[Router] redirect: location=${state.matchedLocation}, loggedIn=$isLoggedIn');
+
       // 로그인 안 됨 -> 로그인 페이지로
       if (!isLoggedIn && !isLoginRoute) {
         return '/login';
       }
 
-      // 로그인 됨 + 로그인 페이지 -> 온보딩 체크
+      // 로그인 됨 + 로그인 페이지 -> 홈으로
       if (isLoggedIn && isLoginRoute) {
         return '/';
       }
@@ -56,12 +60,15 @@ final routerProvider = Provider<GoRouter>((ref) {
                 .select('ai_chef_name')
                 .eq('id', userId)
                 .maybeSingle();
+            debugPrint('[Router] profile check: ai_chef_name=${profile?['ai_chef_name']}');
             if (profile == null || profile['ai_chef_name'] == null) {
+              debugPrint('[Router] → /onboarding (no chef name)');
               return '/onboarding';
             }
           }
-        } catch (_) {
-          // 프로필 조회 실패 시 홈으로 진행
+        } catch (e) {
+          debugPrint('[Router] profile check error: $e');
+          // profile check failed - continue to home
         }
       }
 
@@ -204,22 +211,8 @@ class AIChefApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'AI Chef',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFF6B35), // 오렌지 계열
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        fontFamily: 'Pretendard',
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFFF6B35),
-          brightness: Brightness.dark,
-        ),
-        useMaterial3: true,
-        fontFamily: 'Pretendard',
-      ),
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
       routerConfig: router,
     );
   }

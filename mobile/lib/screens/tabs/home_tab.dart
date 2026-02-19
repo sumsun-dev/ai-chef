@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../components/chef_greeting_card.dart';
+import '../../components/expiry_badge.dart';
+import '../../components/quick_action_card.dart';
+import '../../components/recipe_card.dart';
+import '../../components/section_header.dart';
 import '../../models/chef.dart';
 import '../../models/chef_config.dart';
 import '../../models/ingredient.dart';
@@ -7,6 +12,9 @@ import '../../models/recipe.dart';
 import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
+import '../../theme/app_colors.dart';
+import '../../theme/app_spacing.dart';
+import '../../theme/app_typography.dart';
 
 /// 홈 탭
 class HomeTab extends StatefulWidget {
@@ -34,7 +42,6 @@ class _HomeTabState extends State<HomeTab> {
   bool _isLoading = true;
   Chef _currentChef = Chefs.defaultChef;
 
-  // 오늘의 추천 상태
   Recipe? _recommendedRecipe;
   bool _isLoadingRecommendation = false;
 
@@ -126,8 +133,6 @@ class _HomeTabState extends State<HomeTab> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     if (_isLoading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
@@ -145,115 +150,52 @@ class _HomeTabState extends State<HomeTab> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 셰프 인사 카드
-            _buildChefGreetingCard(colorScheme),
-            const SizedBox(height: 16),
+            ChefGreetingCard(chef: _currentChef),
+            const SizedBox(height: AppSpacing.lg),
 
             // 채팅 입력
-            _buildChatInput(colorScheme),
-            const SizedBox(height: 16),
+            _buildChatInput(),
+            const SizedBox(height: AppSpacing.lg),
 
             // 빠른 선택
             _buildQuickActions(),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
 
             // 유통기한 임박
             if (_expiringIngredients.isNotEmpty) ...[
               _buildExpirySection(),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
             ],
 
             // 오늘의 추천
-            _buildRecommendationSection(colorScheme),
+            _buildRecommendationSection(),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildChefGreetingCard(ColorScheme colorScheme) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(_currentChef.primaryColor).withValues(alpha: 0.1),
-            Color(_currentChef.primaryColor).withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Color(_currentChef.primaryColor).withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  blurRadius: 10,
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                _currentChef.emoji,
-                style: const TextStyle(fontSize: 32),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _currentChef.name,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _currentChef.randomGreeting,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildChatInput(ColorScheme colorScheme) {
+  Widget _buildChatInput() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.inputFill,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: TextField(
         controller: _chatController,
         decoration: InputDecoration(
-          hintText: '메시지를 입력하세요...',
+          hintText: '${_currentChef.name}에게 물어보세요...',
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.all(16),
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          contentPadding: const EdgeInsets.all(AppSpacing.lg),
           suffixIcon: IconButton(
-            icon: Icon(Icons.send, color: colorScheme.primary),
+            icon: const Icon(Icons.send, color: AppColors.primary),
             onPressed: () {
               final text = _chatController.text.trim();
               _chatController.clear();
@@ -274,23 +216,23 @@ class _HomeTabState extends State<HomeTab> {
     return Row(
       children: [
         Expanded(
-          child: _buildQuickActionCard(
+          child: QuickActionCard(
             icon: '🍚',
             label: '혼밥',
             onTap: () => context.go('/recipe'),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: _buildQuickActionCard(
+          child: QuickActionCard(
             icon: '⚡',
             label: '급해요',
             onTap: () => context.go('/recipe'),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Expanded(
-          child: _buildQuickActionCard(
+          child: QuickActionCard(
             icon: '🥬',
             label: '재료정리',
             onTap: () => context.go('/recipe'),
@@ -300,67 +242,19 @@ class _HomeTabState extends State<HomeTab> {
     );
   }
 
-  Widget _buildQuickActionCard({
-    required String icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
-        ),
-        child: Column(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 28)),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildExpirySection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Row(
-              children: [
-                Text('⚠️', style: TextStyle(fontSize: 18)),
-                SizedBox(width: 8),
-                Text(
-                  '유통기한 임박',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            TextButton(
-              onPressed: () => context.go('/refrigerator'),
-              child: const Text('전체보기'),
-            ),
-          ],
+        SectionHeader(
+          emoji: '⚠️',
+          title: '유통기한 임박',
+          actionText: '전체보기',
+          onAction: () => context.go('/refrigerator'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: 90,
+          height: 92,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             itemCount: _expiringIngredients.length,
@@ -374,16 +268,16 @@ class _HomeTabState extends State<HomeTab> {
   }
 
   Widget _buildExpiryIngredientCard(Ingredient ingredient) {
-    final color = _getExpiryColor(ingredient.expiryStatus);
+    final color = getExpiryColor(ingredient.expiryStatus);
 
     return Container(
       width: 120,
-      margin: const EdgeInsets.only(right: 8),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(right: AppSpacing.sm),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -391,74 +285,39 @@ class _HomeTabState extends State<HomeTab> {
         children: [
           Text(
             ingredient.name,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 14,
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.textPrimary,
             ),
             overflow: TextOverflow.ellipsis,
           ),
           Text(
             '${ingredient.quantity} ${ingredient.unit}',
-            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            style: AppTypography.bodySmall.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              ingredient.dDayString,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+          ExpiryBadge(
+            status: ingredient.expiryStatus,
+            dDayString: ingredient.dDayString,
           ),
         ],
       ),
     );
   }
 
-  Color _getExpiryColor(ExpiryStatus status) {
-    switch (status) {
-      case ExpiryStatus.expired:
-        return Colors.red;
-      case ExpiryStatus.critical:
-        return Colors.orange;
-      case ExpiryStatus.warning:
-        return Colors.blue;
-      case ExpiryStatus.safe:
-        return Colors.green;
-    }
-  }
-
-  Widget _buildRecommendationSection(ColorScheme colorScheme) {
+  Widget _buildRecommendationSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Row(
-          children: [
-            Text('🍳', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
-            Text(
-              '오늘의 추천',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
+        const SectionHeader(emoji: '🍳', title: '오늘의 추천'),
+        const SizedBox(height: AppSpacing.md),
         if (_isLoadingRecommendation)
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(32),
+            padding: const EdgeInsets.all(AppSpacing.xxxl),
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.04),
-              borderRadius: BorderRadius.circular(16),
+              color: AppColors.primary.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Column(
               children: [
@@ -467,41 +326,52 @@ class _HomeTabState extends State<HomeTab> {
                   height: 36,
                   child: CircularProgressIndicator(
                     strokeWidth: 3,
-                    color: colorScheme.primary,
+                    color: AppColors.primary,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 Text(
                   'AI 셰프가 추천 중...',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: colorScheme.primary,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.primary,
                   ),
                 ),
               ],
             ),
           )
         else if (_recommendedRecipe != null)
-          _buildRecommendedRecipeCard(_recommendedRecipe!, colorScheme)
+          RecipeCard(
+            recipe: _recommendedRecipe!,
+            onTap: () =>
+                context.push('/recipe/detail', extra: _recommendedRecipe),
+            trailing: TextButton.icon(
+              onPressed: _loadRecommendation,
+              icon: const Icon(Icons.refresh, size: 16),
+              label: const Text('다시 추천'),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+          )
         else
           Center(
             child: Column(
               children: [
-                Icon(
-                  Icons.restaurant,
-                  size: 48,
-                  color: Colors.grey[300],
+                Text(
+                  '🍽️',
+                  style: const TextStyle(fontSize: 48),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   '냉장고 재료 기반 맞춤 레시피를\n추천받아 보세요',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 FilledButton.icon(
                   onPressed: _loadRecommendation,
                   icon: const Icon(Icons.auto_awesome, size: 18),
@@ -511,64 +381,6 @@ class _HomeTabState extends State<HomeTab> {
             ),
           ),
       ],
-    );
-  }
-
-  Widget _buildRecommendedRecipeCard(Recipe recipe, ColorScheme colorScheme) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-      elevation: 0,
-      color: Colors.white,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
-        onTap: () => context.push('/recipe/detail', extra: recipe),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                recipe.title,
-                style: const TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                recipe.description,
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Icon(Icons.timer_outlined,
-                      size: 14, color: Colors.grey[500]),
-                  const SizedBox(width: 3),
-                  Text(
-                    '${recipe.cookingTime}분',
-                    style:
-                        TextStyle(fontSize: 12, color: Colors.grey[600]),
-                  ),
-                  const SizedBox(width: 12),
-                  TextButton.icon(
-                    onPressed: _loadRecommendation,
-                    icon: const Icon(Icons.refresh, size: 16),
-                    label: const Text('다시 추천'),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 8),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
