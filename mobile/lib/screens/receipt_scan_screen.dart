@@ -8,7 +8,9 @@ import '../services/receipt_ocr_service.dart';
 
 /// 영수증 스캔 화면
 class ReceiptScanScreen extends StatefulWidget {
-  const ReceiptScanScreen({super.key});
+  final ReceiptOcrService? ocrService;
+
+  const ReceiptScanScreen({super.key, this.ocrService});
 
   @override
   State<ReceiptScanScreen> createState() => _ReceiptScanScreenState();
@@ -16,11 +18,17 @@ class ReceiptScanScreen extends StatefulWidget {
 
 class _ReceiptScanScreenState extends State<ReceiptScanScreen> {
   final ImagePicker _picker = ImagePicker();
-  final ReceiptOcrService _ocrService = ReceiptOcrService();
+  late final ReceiptOcrService _ocrService;
 
   File? _selectedImage;
   bool _isProcessing = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _ocrService = widget.ocrService ?? ReceiptOcrService();
+  }
 
   Future<void> _pickImage(ImageSource source) async {
     try {

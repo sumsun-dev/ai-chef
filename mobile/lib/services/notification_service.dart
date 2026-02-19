@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
@@ -150,7 +151,10 @@ class NotificationService {
         );
       }
     } catch (e) {
-      // 알림 체크 실패 시 무시 (백그라운드 작업이므로)
+      assert(() {
+        debugPrint('NotificationService: 알림 체크 실패 - $e');
+        return true;
+      }());
     }
   }
 

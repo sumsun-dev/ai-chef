@@ -5,20 +5,23 @@ import '../../services/auth_service.dart';
 
 /// 프로필 탭
 class ProfileTab extends StatefulWidget {
-  const ProfileTab({super.key});
+  final AuthService? authService;
+
+  const ProfileTab({super.key, this.authService});
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
 }
 
 class _ProfileTabState extends State<ProfileTab> {
-  final AuthService _authService = AuthService();
+  late final AuthService _authService;
   Map<String, dynamic>? _profile;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
     _loadProfile();
   }
 
@@ -191,19 +194,19 @@ class _ProfileTabState extends State<ProfileTab> {
                 _buildSettingTile(
                   icon: Icons.notifications,
                   title: '알림 설정',
-                  onTap: () {},
+                  onTap: () => context.push('/settings/notifications'),
                 ),
                 const Divider(height: 1),
                 _buildSettingTile(
                   icon: Icons.lock,
                   title: '개인정보 및 보안',
-                  onTap: () {},
+                  onTap: () => context.push('/settings/privacy'),
                 ),
                 const Divider(height: 1),
                 _buildSettingTile(
                   icon: Icons.help,
                   title: '도움말',
-                  onTap: () {},
+                  onTap: () => context.push('/settings/help'),
                 ),
               ],
             ),

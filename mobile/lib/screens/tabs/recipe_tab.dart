@@ -9,19 +9,34 @@ import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
 import '../../services/recipe_service.dart';
+import '../../services/tool_service.dart';
 
 /// 레시피 탭
 class RecipeTab extends StatefulWidget {
-  const RecipeTab({super.key});
+  final GeminiService? geminiService;
+  final IngredientService? ingredientService;
+  final RecipeService? recipeService;
+  final AuthService? authService;
+  final ToolService? toolService;
+
+  const RecipeTab({
+    super.key,
+    this.geminiService,
+    this.ingredientService,
+    this.recipeService,
+    this.authService,
+    this.toolService,
+  });
 
   @override
   State<RecipeTab> createState() => _RecipeTabState();
 }
 
 class _RecipeTabState extends State<RecipeTab> {
-  final IngredientService _ingredientService = IngredientService();
-  final AuthService _authService = AuthService();
-  final RecipeService _recipeService = RecipeService();
+  late final IngredientService _ingredientService;
+  late final AuthService _authService;
+  late final RecipeService _recipeService;
+  late final ToolService _toolService;
 
   List<Ingredient> _ingredients = [];
   List<Recipe> _recipes = [];
@@ -41,6 +56,10 @@ class _RecipeTabState extends State<RecipeTab> {
   @override
   void initState() {
     super.initState();
+    _ingredientService = widget.ingredientService ?? IngredientService();
+    _authService = widget.authService ?? AuthService();
+    _recipeService = widget.recipeService ?? RecipeService();
+    _toolService = widget.toolService ?? ToolService();
     _loadIngredients();
     _loadBookmarkedRecipes();
     _loadHistory();
@@ -111,11 +130,12 @@ class _RecipeTabState extends State<RecipeTab> {
       );
 
       final ingredientNames = _ingredients.map((i) => i.name).toList();
-      final geminiService = GeminiService();
+      final geminiService = widget.geminiService ?? GeminiService();
+      final tools = await _toolService.getAvailableToolNames();
 
       final recipe = await geminiService.generateRecipe(
         ingredients: ingredientNames,
-        tools: ['프라이팬', '냄비', '전자레인지', '오븐'],
+        tools: tools,
         chefConfig: chefConfig,
         difficulty: _difficulty,
         cookingTime: _maxCookingTime,

@@ -9,12 +9,17 @@ import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/ingredient_add_screen.dart';
+import 'screens/ingredient_review_screen.dart';
+import 'screens/receipt_scan_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'screens/profile/chef_selection_screen.dart';
 import 'screens/profile/cooking_tools_screen.dart';
 import 'screens/profile/profile_edit_screen.dart';
 import 'screens/expiry_alert_screen.dart';
+import 'screens/settings/notification_settings_screen.dart';
+import 'screens/settings/privacy_screen.dart';
+import 'screens/settings/help_screen.dart';
 import 'screens/main_shell.dart';
 import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
@@ -25,18 +30,39 @@ import 'screens/tabs/profile_tab.dart';
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
-    redirect: (context, state) {
+    redirect: (context, state) async {
       final session = Supabase.instance.client.auth.currentSession;
       final isLoggedIn = session != null;
       final isLoginRoute = state.matchedLocation == '/login';
+      final isOnboardingRoute = state.matchedLocation == '/onboarding';
+
       // 로그인 안 됨 -> 로그인 페이지로
       if (!isLoggedIn && !isLoginRoute) {
         return '/login';
       }
 
-      // 로그인 됨 + 로그인 페이지 -> 홈으로
+      // 로그인 됨 + 로그인 페이지 -> 온보딩 체크
       if (isLoggedIn && isLoginRoute) {
         return '/';
+      }
+
+      // 로그인 됨 + 메인 페이지 -> 온보딩 체크
+      if (isLoggedIn && !isOnboardingRoute && state.matchedLocation == '/') {
+        try {
+          final userId = Supabase.instance.client.auth.currentUser?.id;
+          if (userId != null) {
+            final profile = await Supabase.instance.client
+                .from('user_profiles')
+                .select('ai_chef_name')
+                .eq('id', userId)
+                .maybeSingle();
+            if (profile == null || profile['ai_chef_name'] == null) {
+              return '/onboarding';
+            }
+          }
+        } catch (_) {
+          // 프로필 조회 실패 시 홈으로 진행
+        }
       }
 
       return null;
@@ -84,6 +110,17 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const ExpiryAlertScreen(),
       ),
       GoRoute(
+        path: '/receipt-scan',
+        builder: (context, state) => const ReceiptScanScreen(),
+      ),
+      GoRoute(
+        path: '/receipt-result',
+        builder: (context, state) {
+          final result = state.extra as ReceiptOcrResult;
+          return IngredientReviewScreen(ocrResult: result);
+        },
+      ),
+      GoRoute(
         path: '/profile/chef-selection',
         builder: (context, state) => const ChefSelectionScreen(),
       ),
@@ -94,6 +131,18 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      GoRoute(
+        path: '/settings/notifications',
+        builder: (context, state) => const NotificationSettingsScreen(),
+      ),
+      GoRoute(
+        path: '/settings/privacy',
+        builder: (context, state) => PrivacyScreen(),
+      ),
+      GoRoute(
+        path: '/settings/help',
+        builder: (context, state) => const HelpScreen(),
       ),
 
       // 메인 4탭 네비게이션

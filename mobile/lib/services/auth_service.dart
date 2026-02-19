@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../constants/app_constants.dart';
 import '../models/onboarding_state.dart';
 
 /// 인증 서비스
@@ -11,13 +11,15 @@ class AuthService {
   final SupabaseClient _supabase;
   final GoogleSignIn _googleSignIn;
 
+  static const _googleWebClientId =
+      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
   AuthService({SupabaseClient? supabase, GoogleSignIn? googleSignIn})
       : _supabase = supabase ?? Supabase.instance.client,
         _googleSignIn = googleSignIn ??
             GoogleSignIn(
-              clientId: kIsWeb ? dotenv.env['GOOGLE_WEB_CLIENT_ID'] : null,
-              serverClientId:
-                  kIsWeb ? null : dotenv.env['GOOGLE_WEB_CLIENT_ID'],
+              clientId: kIsWeb ? _googleWebClientId : null,
+              serverClientId: kIsWeb ? null : _googleWebClientId,
               scopes: ['email', 'profile'],
             );
 
@@ -74,14 +76,22 @@ class AuthService {
     return response;
   }
 
-  /// 사용자 프로필 업데이트
+  /// 사용자 프로필 업데이트 (허용 필드만 통과)
   Future<void> updateUserProfile(Map<String, dynamic> data) async {
     final user = currentUser;
     if (user == null) throw Exception('로그인이 필요합니다.');
 
+    final filtered = Map<String, dynamic>.fromEntries(
+      data.entries.where(
+        (e) => AppConstants.allowedProfileFields.contains(e.key),
+      ),
+    );
+
+    if (filtered.isEmpty) return;
+
     await _supabase
         .from('user_profiles')
-        .update(data)
+        .update(filtered)
         .eq('id', user.id);
   }
 

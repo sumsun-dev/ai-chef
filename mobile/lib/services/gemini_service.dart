@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:google_generative_ai/google_generative_ai.dart';
+import '../constants/app_constants.dart';
 import '../models/models.dart';
 
 /// Gemini API 서비스
@@ -13,8 +13,10 @@ import '../models/models.dart';
 class GeminiService {
   final String _apiKey;
 
+  static const _envApiKey = String.fromEnvironment('GEMINI_API_KEY');
+
   GeminiService({String? apiKey})
-      : _apiKey = apiKey ?? dotenv.env['GEMINI_API_KEY'] ?? '' {
+      : _apiKey = apiKey ?? _envApiKey {
     if (_apiKey.isEmpty) {
       throw Exception('GEMINI_API_KEY가 설정되지 않았습니다.');
     }
@@ -107,7 +109,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 
     // systemInstruction으로 셰프 역할 설정
     final chatModel = GenerativeModel(
-      model: 'gemini-3.0-flash',
+      model: AppConstants.geminiFlashModel,
       apiKey: _apiKey,
       safetySettings: _safetySettings,
       systemInstruction: Content.text(systemPrompt),
@@ -196,7 +198,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 ```''';
 
     final recipeModel = GenerativeModel(
-      model: 'gemini-3.0-pro',
+      model: AppConstants.geminiProModel,
       apiKey: _apiKey,
       safetySettings: _safetySettings,
       systemInstruction: Content.text(systemPrompt),
@@ -264,7 +266,7 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 ```''';
 
     final visionModel = GenerativeModel(
-      model: 'gemini-3.0-flash',
+      model: AppConstants.geminiFlashModel,
       apiKey: _apiKey,
       safetySettings: _safetySettings,
       systemInstruction: Content.text(systemPrompt),

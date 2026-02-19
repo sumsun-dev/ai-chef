@@ -2,9 +2,10 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:google_generative_ai/google_generative_ai.dart';
 
+import '../constants/app_constants.dart';
 import '../models/ingredient.dart';
 
 /// 영수증 OCR 서비스
@@ -14,16 +15,23 @@ import '../models/ingredient.dart';
 class ReceiptOcrService {
   late final GenerativeModel _model;
 
-  ReceiptOcrService() {
-    final apiKey = dotenv.env['GEMINI_API_KEY'] ?? '';
-    if (apiKey.isEmpty) {
+  static const _envApiKey = String.fromEnvironment('GEMINI_API_KEY');
+
+  ReceiptOcrService({String? apiKey, GenerativeModel? model}) {
+    if (model != null) {
+      _model = model;
+      return;
+    }
+
+    final key = apiKey ?? _envApiKey;
+    if (key.isEmpty) {
       throw Exception('GEMINI_API_KEY가 설정되지 않았습니다.');
     }
 
     // Flash 모델 (Vision 지원, 빠른 처리)
     _model = GenerativeModel(
-      model: 'gemini-3.0-flash',
-      apiKey: apiKey,
+      model: AppConstants.geminiFlashModel,
+      apiKey: key,
       safetySettings: _safetySettings,
     );
   }
@@ -41,6 +49,14 @@ class ReceiptOcrService {
   /// 반환: 추출된 재료 목록과 메타데이터
   Future<ReceiptOcrResult> extractIngredientsFromReceipt(File imageFile) async {
     final bytes = await imageFile.readAsBytes();
+
+    // 이미지 크기 검증
+    if (bytes.lengthInBytes > AppConstants.maxImageSizeBytes) {
+      throw Exception(
+        '이미지 크기가 ${AppConstants.maxImageSizeBytes ~/ (1024 * 1024)}MB를 초과합니다.',
+      );
+    }
+
     return extractIngredientsFromBytes(bytes);
   }
 
@@ -125,6 +141,11 @@ JSON만 응답해주세요. 다른 설명은 필요 없습니다.''';
       final jsonData = json.decode(jsonString) as Map<String, dynamic>;
       return ReceiptOcrResult.fromJson(jsonData);
     } catch (e) {
+      assert(() {
+        debugPrint('ReceiptOcrService: JSON 파싱 실패 - $e');
+        debugPrint('ReceiptOcrService: 원본 응답 - $text');
+        return true;
+      }());
       // 파싱 실패 시 빈 결과 반환
       return ReceiptOcrResult(
         ingredients: [],

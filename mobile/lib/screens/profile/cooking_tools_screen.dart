@@ -2,17 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/onboarding_state.dart';
+import '../../services/auth_service.dart';
 import '../onboarding/step_cooking_tools.dart';
 
 /// 프로필 > 조리 도구 관리 화면
 class CookingToolsScreen extends StatefulWidget {
-  const CookingToolsScreen({super.key});
+  final AuthService? authService;
+
+  const CookingToolsScreen({super.key, this.authService});
 
   @override
   State<CookingToolsScreen> createState() => _CookingToolsScreenState();
 }
 
 class _CookingToolsScreenState extends State<CookingToolsScreen> {
+  late final AuthService _authService;
+
   Map<String, bool> _tools = Map.from(OnboardingState.defaultTools);
   bool _isLoading = true;
   bool _isSaving = false;
@@ -20,15 +25,18 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
     _loadTools();
   }
 
+  SupabaseClient get _supabase => Supabase.instance.client;
+
   Future<void> _loadTools() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = _authService.currentUser?.id;
       if (userId == null) return;
 
-      final response = await Supabase.instance.client
+      final response = await _supabase
           .from('cooking_tools')
           .select()
           .eq('user_id', userId);
@@ -55,11 +63,11 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final userId = _authService.currentUser?.id;
       if (userId == null) return;
 
       // 기존 도구 삭제 후 재삽입
-      await Supabase.instance.client
+      await _supabase
           .from('cooking_tools')
           .delete()
           .eq('user_id', userId);
@@ -72,7 +80,7 @@ class _CookingToolsScreenState extends State<CookingToolsScreen> {
         'is_available': e.value,
       }).toList();
 
-      await Supabase.instance.client.from('cooking_tools').insert(rows);
+      await _supabase.from('cooking_tools').insert(rows);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

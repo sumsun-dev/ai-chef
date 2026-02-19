@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../models/chef_presets.dart';
+import '../../services/auth_service.dart';
 import '../onboarding/step_chef_selection.dart';
 
 /// 프로필 > 셰프 변경 화면
 class ChefSelectionScreen extends StatefulWidget {
-  const ChefSelectionScreen({super.key});
+  final AuthService? authService;
+
+  const ChefSelectionScreen({super.key, this.authService});
 
   @override
   State<ChefSelectionScreen> createState() => _ChefSelectionScreenState();
 }
 
 class _ChefSelectionScreenState extends State<ChefSelectionScreen> {
+  late final AuthService _authService;
+
   String? _selectedPresetId;
   String _chefName = '';
   String _personality = 'professional';
@@ -25,19 +29,14 @@ class _ChefSelectionScreenState extends State<ChefSelectionScreen> {
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
     _loadCurrentChef();
   }
 
   Future<void> _loadCurrentChef() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final profile = await Supabase.instance.client
-          .from('user_profiles')
-          .select()
-          .eq('id', userId)
-          .single();
+      final profile = await _authService.getUserProfile();
+      if (profile == null) return;
 
       final chefId = profile['primary_chef_id'] ?? 'baek';
       final preset = ChefPresets.all.where((p) => p.id == chefId).firstOrNull;
@@ -59,12 +58,9 @@ class _ChefSelectionScreenState extends State<ChefSelectionScreen> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      await Supabase.instance.client.from('user_profiles').update({
+      await _authService.updateUserProfile({
         'primary_chef_id': _selectedPresetId ?? 'baek',
-      }).eq('id', userId);
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

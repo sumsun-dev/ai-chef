@@ -1,30 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/chef.dart';
+import '../../models/chef_config.dart';
 import '../../models/ingredient.dart';
+import '../../models/recipe.dart';
 import '../../services/auth_service.dart';
+import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
 
 /// 홈 탭
 class HomeTab extends StatefulWidget {
-  const HomeTab({super.key});
+  final AuthService? authService;
+  final IngredientService? ingredientService;
+  final GeminiService? geminiService;
+
+  const HomeTab({
+    super.key,
+    this.authService,
+    this.ingredientService,
+    this.geminiService,
+  });
 
   @override
   State<HomeTab> createState() => _HomeTabState();
 }
 
 class _HomeTabState extends State<HomeTab> {
-  final AuthService _authService = AuthService();
-  final IngredientService _ingredientService = IngredientService();
+  late final AuthService _authService;
+  late final IngredientService _ingredientService;
   final TextEditingController _chatController = TextEditingController();
 
   List<Ingredient> _expiringIngredients = [];
   bool _isLoading = true;
   Chef _currentChef = Chefs.defaultChef;
 
+  // 오늘의 추천 상태
+  Recipe? _recommendedRecipe;
+  bool _isLoadingRecommendation = false;
+
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
+    _ingredientService = widget.ingredientService ?? IngredientService();
     _loadData();
   }
 
@@ -54,6 +72,55 @@ class _HomeTabState extends State<HomeTab> {
       });
     } catch (e) {
       setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadRecommendation() async {
+    setState(() => _isLoadingRecommendation = true);
+
+    try {
+      final ingredients = await _ingredientService.getUserIngredients();
+      if (ingredients.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('냉장고에 재료를 먼저 등록해주세요.')),
+          );
+          setState(() => _isLoadingRecommendation = false);
+        }
+        return;
+      }
+
+      final profile = await _authService.getUserProfile();
+      final chefId = profile?['primary_chef_id'] ?? 'baek';
+      final chef = Chefs.findById(chefId) ?? Chefs.defaultChef;
+
+      final chefConfig = AIChefConfig(
+        name: chef.name,
+        expertise: chef.specialties,
+        cookingPhilosophy: chef.philosophy,
+      );
+
+      final geminiService = widget.geminiService ?? GeminiService();
+      final recipe = await geminiService.generateRecipe(
+        ingredients: ingredients.map((i) => i.name).toList(),
+        tools: ['프라이팬', '냄비', '전자레인지', '오븐'],
+        chefConfig: chefConfig,
+        servings: 1,
+      );
+
+      if (mounted) {
+        setState(() {
+          _recommendedRecipe = recipe;
+          _isLoadingRecommendation = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoadingRecommendation = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('추천 생성에 실패했습니다.')),
+        );
+      }
     }
   }
 
@@ -101,7 +168,7 @@ class _HomeTabState extends State<HomeTab> {
             ],
 
             // 오늘의 추천
-            _buildRecommendationSection(),
+            _buildRecommendationSection(colorScheme),
           ],
         ),
       ),
@@ -367,7 +434,7 @@ class _HomeTabState extends State<HomeTab> {
     }
   }
 
-  Widget _buildRecommendationSection() {
+  Widget _buildRecommendationSection(ColorScheme colorScheme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -385,27 +452,123 @@ class _HomeTabState extends State<HomeTab> {
           ],
         ),
         const SizedBox(height: 12),
-        Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.restaurant,
-                size: 48,
-                color: Colors.grey[300],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '냉장고 재료를 등록하면\n맞춤 레시피를 추천해드려요',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[500],
+        if (_isLoadingRecommendation)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(32),
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              children: [
+                SizedBox(
+                  width: 36,
+                  height: 36,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: colorScheme.primary,
+                  ),
                 ),
+                const SizedBox(height: 12),
+                Text(
+                  'AI 셰프가 추천 중...',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: colorScheme.primary,
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (_recommendedRecipe != null)
+          _buildRecommendedRecipeCard(_recommendedRecipe!, colorScheme)
+        else
+          Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.restaurant,
+                  size: 48,
+                  color: Colors.grey[300],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '냉장고 재료 기반 맞춤 레시피를\n추천받아 보세요',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                FilledButton.icon(
+                  onPressed: _loadRecommendation,
+                  icon: const Icon(Icons.auto_awesome, size: 18),
+                  label: const Text('추천 받기'),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildRecommendedRecipeCard(Recipe recipe, ColorScheme colorScheme) {
+    return Card(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      elevation: 0,
+      color: Colors.white,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: () => context.push('/recipe/detail', extra: recipe),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                recipe.title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                recipe.description,
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Icon(Icons.timer_outlined,
+                      size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${recipe.cookingTime}분',
+                    style:
+                        TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 12),
+                  TextButton.icon(
+                    onPressed: _loadRecommendation,
+                    icon: const Icon(Icons.refresh, size: 16),
+                    label: const Text('다시 추천'),
+                    style: TextButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      minimumSize: Size.zero,
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
         ),
-      ],
+      ),
     );
   }
 }

@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../services/auth_service.dart';
 
 /// 프로필 > 요리 설정 편집 화면
 class ProfileEditScreen extends StatefulWidget {
-  const ProfileEditScreen({super.key});
+  final AuthService? authService;
+
+  const ProfileEditScreen({super.key, this.authService});
 
   @override
   State<ProfileEditScreen> createState() => _ProfileEditScreenState();
 }
 
 class _ProfileEditScreenState extends State<ProfileEditScreen> {
+  late final AuthService _authService;
+
   String _skillLevel = 'beginner';
   List<String> _scenarios = [];
   String _timePreference = '20min';
@@ -47,21 +52,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      final profile = await Supabase.instance.client
-          .from('user_profiles')
-          .select()
-          .eq('id', userId)
-          .single();
-
-      if (mounted) {
+      final profile = await _authService.getUserProfile();
+      if (profile != null && mounted) {
         setState(() {
           _skillLevel = profile['skill_level'] ?? 'beginner';
           _scenarios = List<String>.from(profile['scenarios'] ?? []);
@@ -70,6 +68,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
           _householdSize = profile['household_size'] ?? 1;
           _isLoading = false;
         });
+      } else {
+        if (mounted) setState(() => _isLoading = false);
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
@@ -79,16 +79,13 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      final userId = Supabase.instance.client.auth.currentUser?.id;
-      if (userId == null) return;
-
-      await Supabase.instance.client.from('user_profiles').update({
+      await _authService.updateUserProfile({
         'skill_level': _skillLevel,
         'scenarios': _scenarios,
         'time_preference': _timePreference,
         'budget_preference': _budgetPreference,
         'household_size': _householdSize,
-      }).eq('id', userId);
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

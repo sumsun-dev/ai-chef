@@ -5,15 +5,23 @@ import '../services/auth_service.dart';
 
 /// 로그인 화면
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final AuthService? authService;
+
+  const LoginScreen({super.key, this.authService});
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final AuthService _authService = AuthService();
+  late final AuthService _authService;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = widget.authService ?? AuthService();
+  }
 
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
@@ -34,14 +42,16 @@ class _LoginScreenState extends State<LoginScreen> {
         context.go('/onboarding');
       }
     } catch (e, stackTrace) {
-      debugPrint('로그인 에러: $e');
-      debugPrint('스택트레이스: $stackTrace');
+      assert(() {
+        debugPrint('로그인 에러: $e');
+        debugPrint('스택트레이스: $stackTrace');
+        return true;
+      }());
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('로그인 실패: ${e.toString()}'),
+          const SnackBar(
+            content: Text('로그인에 실패했습니다. 다시 시도해주세요.'),
             backgroundColor: Colors.red,
-            duration: const Duration(seconds: 10),
           ),
         );
       }
