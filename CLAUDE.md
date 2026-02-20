@@ -8,7 +8,7 @@ Smart ingredient management & personalized recipe recommendation app. Uses Googl
 - **Web**: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui
 - **Mobile**: Flutter 3.10+, Riverpod, Go Router
 - **Backend**: Supabase (PostgreSQL, Auth, RLS)
-- **AI**: Google Gemini 2.5 Flash/Pro
+- **AI**: Google Gemini 3.0 Flash/Pro
 - **Deploy**: Google Cloud Run
 
 ### Project Structure
