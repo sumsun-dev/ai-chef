@@ -8,10 +8,12 @@ import '../services/ingredient_service.dart';
 /// 재료 검토 및 편집 화면
 class IngredientReviewScreen extends StatefulWidget {
   final ReceiptOcrResult ocrResult;
+  final IngredientService? ingredientService;
 
   const IngredientReviewScreen({
     super.key,
     required this.ocrResult,
+    this.ingredientService,
   });
 
   @override
@@ -23,11 +25,12 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
   final Set<int> _selectedIndices = {};
   bool _isSaving = false;
 
-  final IngredientService _ingredientService = IngredientService();
+  late final IngredientService _ingredientService;
 
   @override
   void initState() {
     super.initState();
+    _ingredientService = widget.ingredientService ?? IngredientService();
     _ingredients = List.from(widget.ocrResult.ingredients);
     // 기본적으로 모두 선택
     _selectedIndices.addAll(List.generate(_ingredients.length, (i) => i));

@@ -233,7 +233,7 @@ class ReceiptOcrResult {
   factory ReceiptOcrResult.fromJson(Map<String, dynamic> json) {
     final items = (json['items'] as List<dynamic>?) ?? [];
     final purchaseDate = json['date'] != null
-        ? DateTime.tryParse(json['date'] as String)
+        ? (DateTime.tryParse(json['date'] as String) ?? DateTime.now())
         : DateTime.now();
 
     return ReceiptOcrResult(
@@ -245,7 +245,7 @@ class ReceiptOcrResult {
         // 카테고리별 기본 유통기한 설정
         final expiryDays = _getDefaultExpiryDays(category);
         final expiryDate =
-            (purchaseDate ?? DateTime.now()).add(Duration(days: expiryDays));
+            purchaseDate.add(Duration(days: expiryDays));
 
         return Ingredient(
           name: itemMap['name'] as String,

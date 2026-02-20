@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, visibleForTesting;
 import 'package:google_generative_ai/google_generative_ai.dart';
 
 import '../constants/app_constants.dart';
@@ -62,7 +62,7 @@ class ReceiptOcrService {
 
   /// 바이트 데이터에서 재료 정보 추출
   Future<ReceiptOcrResult> extractIngredientsFromBytes(Uint8List bytes) async {
-    final prompt = _buildOcrPrompt();
+    final prompt = buildOcrPrompt();
 
     final content = Content.multi([
       TextPart(prompt),
@@ -72,11 +72,12 @@ class ReceiptOcrService {
     final response = await _model.generateContent([content]);
     final text = response.text ?? '';
 
-    return _parseResponse(text);
+    return parseResponse(text);
   }
 
   /// OCR 프롬프트 생성
-  String _buildOcrPrompt() {
+  @visibleForTesting
+  String buildOcrPrompt() {
     return '''이 영수증 이미지를 분석하여 식료품/재료 항목만 추출해주세요.
 
 ## 요청사항
@@ -125,7 +126,8 @@ JSON만 응답해주세요. 다른 설명은 필요 없습니다.''';
   }
 
   /// AI 응답 파싱
-  ReceiptOcrResult _parseResponse(String text) {
+  @visibleForTesting
+  ReceiptOcrResult parseResponse(String text) {
     try {
       // JSON 블록 추출
       final jsonMatch = RegExp(r'```json\n?([\s\S]*?)\n?```').firstMatch(text);
