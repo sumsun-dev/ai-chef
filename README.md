@@ -15,6 +15,11 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 - **빠른 액션** - 혼밥/급해요/재료정리 원탭 필터로 상황별 레시피 즉시 추천
 - **요리 시작 모드** - 단계별 PageView, 카운트다운 타이머, 화면 꺼짐 방지, 완료 시 기록 자동 저장
 - **AI 채팅 + 레시피 변환** - 셰프와 실시간 대화, 응답에서 레시피 패턴 감지 시 구조화된 레시피로 변환/저장
+- **음성 명령 (핸즈프리)** - 조리 모드에서 "다음", "이전", "타이머 시작" 등 한국어 음성 명령으로 핸즈프리 조작
+- **TTS 단계 읽기** - 조리 단계를 한국어 음성으로 자동 읽기, 토글 ON/OFF
+- **Function Calling** - Gemini Function Calling으로 재료 조회, 레시피 생성, 북마크 등 자연어 명령 실행
+- **스마트 추천** - 유통기한 임박 재료 + 시간대별 맞춤 인사 기반 AI 레시피 추천 알림
+- **오디오/진동 피드백** - 타이머 완료 시 효과음 + 진동으로 알림
 - **프로필 관리** - 셰프 변경, 조리 도구 관리, 요리 설정 편집
 - **시각적 가이드** - 사진 분석으로 실시간 요리 피드백
 - **알림 설정** - 유통기한 알림 스케줄/해제, SharedPreferences 영구 저장
@@ -35,6 +40,10 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 | Notifications | Flutter Local Notifications 19 |
 | Wakelock | Wakelock Plus |
 | Persistence | SharedPreferences |
+| TTS | Flutter TTS 4 |
+| 음성 인식 | Speech to Text 7 |
+| 오디오 | Audioplayers 6 |
+| 진동 | Vibration 2 |
 
 ### Web (Next.js)
 | 구분 | 기술 |
@@ -77,7 +86,7 @@ ai-chef/
 │   │   │   ├── onboarding/ # 3단계 온보딩 (셰프 선택 → 실력 → 완료)
 │   │   │   ├── profile/    # 프로필 관리 (셰프/도구/설정)
 │   │   │   └── settings/   # 설정 (알림, 개인정보, 도움말)
-│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification 서비스
+│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification, TTS, Voice, Audio 서비스
 │   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
 │   └── test/               # 위젯/단위 테스트 (232개)
 ├── supabase/

@@ -125,5 +125,74 @@ void main() {
 
       expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
     });
+
+    testWidgets('스마트 추천 카드에 AI 추천 텍스트가 표시된다', (tester) async {
+      final expiringIngredient = createTestIngredient(
+        name: '우유',
+        expiryDate: DateTime.now().add(const Duration(days: 1)),
+      );
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: createTestProfile()),
+          ingredientService: FakeIngredientService(
+            ingredients: [expiringIngredient],
+            expiryGroup: ExpiryIngredientGroup(
+              expiredItems: [],
+              criticalItems: [expiringIngredient],
+              warningItems: [],
+              safeItems: [],
+            ),
+          ),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('AI 추천'), findsOneWidget);
+    });
+
+    testWidgets('프로필 로드 실패 시에도 기본 셰프로 렌더링된다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: null),
+          ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HomeTab), findsOneWidget);
+      expect(find.text('AI 셰프'), findsOneWidget);
+    });
+
+    testWidgets('알림 아이콘 버튼이 존재한다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: createTestProfile()),
+          ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.notifications_outlined), findsOneWidget);
+    });
+
+    testWidgets('채팅 입력 필드가 존재한다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: createTestProfile()),
+          ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TextField), findsOneWidget);
+    });
   });
 }

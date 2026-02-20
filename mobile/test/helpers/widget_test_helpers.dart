@@ -14,12 +14,15 @@ import 'package:ai_chef/services/cooking_audio_service.dart';
 import 'package:ai_chef/services/function_calling_service.dart';
 import 'package:ai_chef/services/gemini_service.dart';
 import 'package:ai_chef/services/ingredient_service.dart';
+import 'package:ai_chef/services/chat_service.dart';
 import 'package:ai_chef/services/notification_service.dart';
 import 'package:ai_chef/services/receipt_ocr_service.dart';
 import 'package:ai_chef/services/recipe_service.dart';
 import 'package:ai_chef/services/tts_service.dart';
 import 'package:ai_chef/services/tool_service.dart';
 import 'package:ai_chef/services/voice_command_service.dart';
+
+import 'package:ai_chef/models/chat_message.dart';
 
 export 'package:ai_chef/models/ingredient.dart' show ExpiryIngredientGroup;
 
@@ -366,6 +369,36 @@ class FakeVoiceCommandService with Fake implements VoiceCommandService {
 
   @override
   VoiceCommand parseCommand(String text) => UnknownCommand(text);
+}
+
+class FakeChatService with Fake implements ChatService {
+  List<ChatMessage> chatHistory;
+  bool saveCalled = false;
+  bool clearCalled = false;
+
+  FakeChatService({this.chatHistory = const []});
+
+  @override
+  Future<List<ChatMessage>> getChatHistory({
+    required String chefId,
+    int limit = 50,
+  }) async =>
+      chatHistory;
+
+  @override
+  Future<void> saveMessage(ChatMessage message) async {
+    saveCalled = true;
+  }
+
+  @override
+  Future<void> saveMessages(List<ChatMessage> messages) async {
+    saveCalled = true;
+  }
+
+  @override
+  Future<void> clearChatHistory(String chefId) async {
+    clearCalled = true;
+  }
 }
 
 class FakeCookingAudioService with Fake implements CookingAudioService {

@@ -134,5 +134,146 @@ void main() {
 
       expect(find.text('이전'), findsNothing);
     });
+
+    testWidgets('두 번째 단계에서 "이전" 버튼이 표시된다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: FakeTtsService(),
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+
+      await tester.tap(find.text('완료'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('이전'), findsOneWidget);
+    });
+
+    testWidgets('TTS 토글 버튼이 존재한다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: FakeTtsService(),
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.volume_off), findsOneWidget);
+    });
+
+    testWidgets('TTS 토글 시 아이콘이 변경되고 speak이 호출된다', (tester) async {
+      final fakeTts = FakeTtsService();
+
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: fakeTts,
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.volume_off));
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.volume_up), findsOneWidget);
+      expect(fakeTts.speakCallCount, greaterThan(0));
+    });
+
+    testWidgets('TTS 비활성화 시 stop이 호출된다', (tester) async {
+      final fakeTts = FakeTtsService();
+
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: fakeTts,
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      // 활성화
+      await tester.tap(find.byIcon(Icons.volume_off));
+      await tester.pumpAndSettle();
+
+      // 비활성화
+      await tester.tap(find.byIcon(Icons.volume_up));
+      await tester.pumpAndSettle();
+
+      expect(fakeTts.stopCalled, isTrue);
+    });
+
+    testWidgets('음성 명령 버튼이 존재한다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: FakeTtsService(),
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.mic_none), findsOneWidget);
+    });
+
+    testWidgets('모든 단계 완료 시 완료 다이얼로그가 표시된다', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: _createTestRecipe(),
+          recipeService: FakeRecipeService(),
+          ttsService: FakeTtsService(),
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.text('완료'));
+        await tester.pumpAndSettle();
+      }
+
+      expect(find.text('요리 완료!'), findsAtLeast(1));
+      expect(find.text('확인'), findsAtLeast(1));
+    });
+
+    testWidgets('빈 instructions 레시피도 안전하게 렌더링된다', (tester) async {
+      final emptyRecipe = Recipe(
+        title: '빈 레시피',
+        description: '단계 없음',
+        cuisine: '한식',
+        difficulty: RecipeDifficulty.easy,
+        cookingTime: 0,
+        servings: 1,
+        ingredients: [],
+        tools: [],
+        instructions: [],
+      );
+
+      await tester.pumpWidget(
+        wrapWithMaterialApp(CookingModeScreen(
+          recipe: emptyRecipe,
+          recipeService: FakeRecipeService(),
+          ttsService: FakeTtsService(),
+          voiceCommandService: FakeVoiceCommandService(),
+          audioService: FakeCookingAudioService(),
+        )),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('빈 레시피'), findsOneWidget);
+    });
   });
 }

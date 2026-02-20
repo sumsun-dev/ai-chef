@@ -18,8 +18,21 @@ import '../theme/app_typography.dart';
 /// AI 셰프 채팅 화면
 class ChatScreen extends StatefulWidget {
   final String? initialMessage;
+  final AuthService? authService;
+  final IngredientService? ingredientService;
+  final ChatService? chatService;
+  final GeminiService? geminiService;
+  final FunctionCallingService? functionCallingService;
 
-  const ChatScreen({super.key, this.initialMessage});
+  const ChatScreen({
+    super.key,
+    this.initialMessage,
+    this.authService,
+    this.ingredientService,
+    this.chatService,
+    this.geminiService,
+    this.functionCallingService,
+  });
 
   @override
   State<ChatScreen> createState() => _ChatScreenState();
@@ -28,9 +41,9 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final AuthService _authService = AuthService();
-  final IngredientService _ingredientService = IngredientService();
-  final ChatService _chatService = ChatService();
+  late final AuthService _authService;
+  late final IngredientService _ingredientService;
+  late final ChatService _chatService;
 
   final List<ChatMessage> _messages = [];
   final Map<String, AIResponse> _aiResponses = {};
@@ -44,6 +57,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? AuthService();
+    _ingredientService = widget.ingredientService ?? IngredientService();
+    _chatService = widget.chatService ?? ChatService();
     _initChat();
   }
 
@@ -56,10 +72,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initChat() async {
     try {
-      _geminiService = GeminiService();
-      _functionCallingService = FunctionCallingService(
-        ingredientService: _ingredientService,
-      );
+      _geminiService = widget.geminiService ?? GeminiService();
+      _functionCallingService = widget.functionCallingService ??
+          FunctionCallingService(ingredientService: _ingredientService);
     } catch (_) {
       // API 키 미설정 시 무시
     }
