@@ -11,8 +11,13 @@ import '../theme/app_typography.dart';
 class IngredientAddScreen extends StatefulWidget {
   /// 수정 모드일 때 기존 재료 전달
   final Ingredient? ingredient;
+  final IngredientService? ingredientService;
 
-  const IngredientAddScreen({super.key, this.ingredient});
+  const IngredientAddScreen({
+    super.key,
+    this.ingredient,
+    this.ingredientService,
+  });
 
   bool get isEditMode => ingredient != null;
 
@@ -22,7 +27,7 @@ class IngredientAddScreen extends StatefulWidget {
 
 class _IngredientAddScreenState extends State<IngredientAddScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _ingredientService = IngredientService();
+  late final IngredientService _ingredientService;
 
   late final TextEditingController _nameController;
   late final TextEditingController _quantityController;
@@ -66,6 +71,7 @@ class _IngredientAddScreenState extends State<IngredientAddScreen> {
   @override
   void initState() {
     super.initState();
+    _ingredientService = widget.ingredientService ?? IngredientService();
     final i = widget.ingredient;
     _nameController = TextEditingController(text: i?.name ?? '');
     _quantityController =
