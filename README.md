@@ -22,6 +22,8 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 - **스마트 추천** - 유통기한 임박 재료 + 시간대별 맞춤 인사 기반 AI 레시피 추천 알림
 - **오디오/진동 피드백** - 타이머 완료 시 효과음 + 진동으로 알림
 - **프로필 관리** - 셰프 변경, 조리 도구 관리, 요리 설정 편집
+- **요리 통계** - 총 요리 횟수, 연속 요리, 자주 만든 레시피, 요일별 패턴 대시보드
+- **레시피 공유** - share_plus 활용 텍스트 공유 (재료/조리법/영양 정보 포함)
 - **시각적 가이드** - 사진 분석으로 실시간 요리 피드백
 - **알림 설정** - 유통기한 알림 스케줄/해제, SharedPreferences 영구 저장
 
@@ -45,6 +47,7 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 | 음성 인식 | Speech to Text 7 |
 | 오디오 | Audioplayers 6 |
 | 진동 | Vibration 2 |
+| 공유 | Share Plus 10 |
 
 ### Web (Next.js)
 | 구분 | 기술 |
@@ -85,11 +88,11 @@ ai-chef/
 │   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, CookingMode, Chat 등)
 │   │   │   ├── tabs/       # Bottom navigation 탭 화면
 │   │   │   ├── onboarding/ # 3단계 온보딩 (셰프 선택 → 실력 → 완료)
-│   │   │   ├── profile/    # 프로필 관리 (셰프/도구/설정)
+│   │   │   ├── profile/    # 프로필 관리 (셰프/도구/설정/통계)
 │   │   │   └── settings/   # 설정 (알림, 개인정보, 도움말)
-│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification, TTS, Voice, Audio 서비스
+│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification, TTS, Voice, Audio, Sharing 서비스
 │   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
-│   └── test/               # 위젯/단위 테스트 (232개)
+│   └── test/               # 위젯/단위 테스트 (450개)
 ├── supabase/
 │   └── migrations/         # DB 마이그레이션 (source of truth)
 ├── docs/                   # PRD, 비용 추정, 설계 문서
@@ -191,7 +194,7 @@ Source of truth: `supabase/migrations/`
 | `ingredients` | 재료 (location: fridge/freezer/pantry) |
 | `cooking_tools` | 요리 도구 |
 | `recipes` | AI 생성 레시피 |
-| `cooking_history` | 조리 이력 |
+| `recipe_history` | 요리 기록 (통계용) |
 | `shopping_items` | 쇼핑 리스트 (source: manual/recipe) |
 | `chat_sessions` | AI 셰프 채팅 세션 |
 | `chat_messages` | 채팅 메시지 |
