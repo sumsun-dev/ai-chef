@@ -64,7 +64,7 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 |------|------|
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth + Google Sign-In |
-| AI Model | Gemini 3.0 Flash / Pro |
+| AI Model | Gemini 2.5 Flash / Pro |
 | Deploy | Google Cloud Run |
 
 ---
@@ -205,8 +205,8 @@ Source of truth: `supabase/migrations/`
 
 | 용도 | 모델 | Input / Output (1M tokens) |
 |------|------|---------------------------|
-| 빠른 대화, 이미지 분석 | Gemini 3.0 Flash | $0.30 / $2.50 |
-| 레시피 생성 | Gemini 3.0 Pro | $1.25 / $10.00 |
+| 빠른 대화, 이미지 분석 | Gemini 2.5 Flash | $0.15 / $0.60 |
+| 레시피 생성 | Gemini 2.5 Pro | $1.25 / $10.00 |
 
 ---
 

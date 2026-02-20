@@ -3,8 +3,8 @@ class AppConstants {
   AppConstants._();
 
   // Gemini 모델명
-  static const geminiFlashModel = 'gemini-3.0-flash';
-  static const geminiProModel = 'gemini-3.0-pro';
+  static const geminiFlashModel = 'gemini-2.5-flash';
+  static const geminiProModel = 'gemini-2.5-pro';
 
   // 이미지 제한
   static const maxImageSizeBytes = 5 * 1024 * 1024; // 5MB

@@ -170,6 +170,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       ),
       floatingActionButton: _recipe.instructions.isNotEmpty
           ? FloatingActionButton.extended(
+              heroTag: null,
               onPressed: () => context.push(
                 '/recipe/cooking',
                 extra: _recipe,

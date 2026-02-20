@@ -278,14 +278,14 @@ ${config.cookingPhilosophy || "맛있고 건강한 요리를 쉽게 만들 수 �
 
 /**
  * 사용 모델 가이드
- * - gemini-3.0-flash: 빠른 대화, 이미지 분석 (가성비 최고)
- * - gemini-3.0-pro: 복잡한 레시피 생성, 창의적 추론
+ * - gemini-2.5-flash: 빠른 대화, 이미지 분석 (가성비 최고)
+ * - gemini-2.5-pro: 복잡한 레시피 생성, 창의적 추론
  */
 
 // Gemini 모델 가져오기 (Flash - 빠른 대화용)
 export function getGeminiFlash() {
   return getGenAI().getGenerativeModel({
-    model: "gemini-3.0-flash",
+    model: "gemini-2.5-flash",
     safetySettings,
   });
 }
@@ -293,7 +293,7 @@ export function getGeminiFlash() {
 // Gemini 모델 가져오기 (Pro - 복잡한 레시피용)
 export function getGeminiPro() {
   return getGenAI().getGenerativeModel({
-    model: "gemini-3.0-pro",
+    model: "gemini-2.5-pro",
     safetySettings,
   });
 }

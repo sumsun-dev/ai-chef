@@ -205,6 +205,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
               ),
             ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: _showAddIngredientSheet,
         icon: const Icon(Icons.add),
         label: const Text('재료 추가'),

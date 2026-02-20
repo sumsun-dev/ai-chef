@@ -138,7 +138,7 @@ describe("getGeminiFlash / getGeminiPro", () => {
     const { getGeminiFlash } = await import("@/lib/gemini");
     getGeminiFlash();
     expect(mockGetGenerativeModel).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gemini-3.0-flash" })
+      expect.objectContaining({ model: "gemini-2.5-flash" })
     );
   });
 
@@ -146,7 +146,7 @@ describe("getGeminiFlash / getGeminiPro", () => {
     const { getGeminiPro } = await import("@/lib/gemini");
     getGeminiPro();
     expect(mockGetGenerativeModel).toHaveBeenCalledWith(
-      expect.objectContaining({ model: "gemini-3.0-pro" })
+      expect.objectContaining({ model: "gemini-2.5-pro" })
     );
   });
 

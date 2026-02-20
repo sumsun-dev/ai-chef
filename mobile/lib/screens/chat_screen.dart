@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../components/ai_response_card.dart';
@@ -75,8 +76,8 @@ class _ChatScreenState extends State<ChatScreen> {
       _geminiService = widget.geminiService ?? GeminiService();
       _functionCallingService = widget.functionCallingService ??
           FunctionCallingService(ingredientService: _ingredientService);
-    } catch (_) {
-      // API 키 미설정 시 무시
+    } catch (e) {
+      debugPrint('GeminiService 초기화 실패: $e');
     }
 
     await _loadChefAndIngredients();
@@ -234,7 +235,9 @@ class _ChatScreenState extends State<ChatScreen> {
           _saveToDB(userMessage, assistantMessage);
         }
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('채팅 응답 에러: $e');
+      debugPrint('스택트레이스: $stackTrace');
       if (mounted) {
         setState(() {
           final loadingIndex = _messages.indexWhere((m) => m.isLoading);

@@ -9,8 +9,8 @@ import 'function_calling_service.dart';
 /// Gemini API 서비스
 ///
 /// 사용 모델:
-/// - gemini-3.0-flash: 빠른 대화용
-/// - gemini-3.0-pro: 복잡한 레시피 생성용
+/// - gemini-2.5-flash: 빠른 대화용
+/// - gemini-2.5-pro: 복잡한 레시피 생성용
 class GeminiService {
   final String _apiKey;
 

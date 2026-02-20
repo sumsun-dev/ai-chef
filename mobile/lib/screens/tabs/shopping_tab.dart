@@ -214,6 +214,7 @@ class _ShoppingTabState extends State<ShoppingTab> {
                   : _buildGroupedList(),
             ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: null,
         onPressed: _showAddSheet,
         icon: const Icon(Icons.add),
         label: const Text('추가'),
