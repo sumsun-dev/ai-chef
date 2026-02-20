@@ -420,7 +420,18 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
                         },
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.lg),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: _buildAddOption(
+                        icon: Icons.receipt_long,
+                        label: '영수증\n스캔',
+                        onTap: () {
+                          Navigator.pop(context);
+                          this.context.push('/receipt-scan');
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: _buildAddOption(
                         icon: Icons.edit,

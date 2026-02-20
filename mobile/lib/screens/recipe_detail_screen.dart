@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
@@ -129,10 +130,23 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
               const Divider(height: 32),
               _buildChefNote(),
             ],
-            const SizedBox(height: AppSpacing.xxxl),
+            // FAB 공간 확보
+            const SizedBox(height: 80),
           ],
         ),
       ),
+      floatingActionButton: _recipe.instructions.isNotEmpty
+          ? FloatingActionButton.extended(
+              onPressed: () => context.push(
+                '/recipe/cooking',
+                extra: _recipe,
+              ),
+              icon: const Icon(Icons.play_arrow),
+              label: const Text('요리 시작'),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            )
+          : null,
     );
   }
 
@@ -181,14 +195,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           _buildBadge(
             icon: Icons.people_outline,
             label: '${_recipe.servings}인분',
-            color: const Color(0xFF009688),
+            color: AppColors.teal,
           ),
           if (_recipe.cuisine.isNotEmpty) ...[
             const SizedBox(width: AppSpacing.sm),
             _buildBadge(
               icon: Icons.restaurant,
               label: _recipe.cuisine,
-              color: const Color(0xFF9C27B0),
+              color: AppColors.purple,
             ),
           ],
         ],
@@ -464,7 +478,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                 '탄수화물', '${nutrition.carbs}', 'g', AppColors.warning,
               ),
               _buildNutritionItem(
-                '지방', '${nutrition.fat}', 'g', const Color(0xFF9C27B0),
+                '지방', '${nutrition.fat}', 'g', AppColors.purple,
               ),
             ],
           ),

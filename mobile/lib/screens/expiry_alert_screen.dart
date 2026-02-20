@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../components/expiry_badge.dart';
 import '../models/ingredient.dart';
 import '../services/ingredient_service.dart';
+import '../theme/app_colors.dart';
 
 /// 유통기한 알림 상세 화면
 class ExpiryAlertScreen extends StatefulWidget {
@@ -90,7 +92,7 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: const Text('삭제'),
           ),
         ],
@@ -132,21 +134,21 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
               child: _buildTabLabel(
                 '만료됨',
                 _expiryGroup?.expiredCount ?? 0,
-                Colors.red,
+                AppColors.error,
               ),
             ),
             Tab(
               child: _buildTabLabel(
                 '3일 이내',
                 _expiryGroup?.criticalCount ?? 0,
-                Colors.orange,
+                AppColors.warning,
               ),
             ),
             Tab(
               child: _buildTabLabel(
                 '7일 이내',
                 _expiryGroup?.warningCount ?? 0,
-                Colors.blue,
+                AppColors.info,
               ),
             ),
           ],
@@ -160,7 +162,7 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.error_outline,
-                          size: 48, color: Colors.red),
+                          size: 48, color: AppColors.error),
                       const SizedBox(height: 16),
                       Text('오류가 발생했습니다'),
                       const SizedBox(height: 8),
@@ -231,14 +233,14 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
             Icon(
               _getStatusIcon(status),
               size: 64,
-              color: Colors.grey[300],
+              color: AppColors.textTertiary,
             ),
             const SizedBox(height: 16),
             Text(
               _getEmptyMessage(status),
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 16,
-                color: Colors.grey[600],
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -282,21 +284,8 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
     }
   }
 
-  Color _getStatusColor(ExpiryStatus status) {
-    switch (status) {
-      case ExpiryStatus.expired:
-        return Colors.red;
-      case ExpiryStatus.critical:
-        return Colors.orange;
-      case ExpiryStatus.warning:
-        return Colors.blue;
-      case ExpiryStatus.safe:
-        return Colors.green;
-    }
-  }
-
   Widget _buildIngredientCard(Ingredient ingredient) {
-    final color = _getStatusColor(ingredient.expiryStatus);
+    final color = getExpiryColor(ingredient.expiryStatus);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -340,7 +329,7 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () => _deleteIngredient(ingredient),
-                  color: Colors.grey,
+                  color: AppColors.textTertiary,
                 ),
               ],
             ),
@@ -368,13 +357,13 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
             // 유통기한
             Row(
               children: [
-                Icon(Icons.event_outlined, size: 16, color: Colors.grey[600]),
+                const Icon(Icons.event_outlined, size: 16, color: AppColors.textSecondary),
                 const SizedBox(width: 4),
                 Text(
                   '유통기한: ${_formatDate(ingredient.expiryDate)}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
-                    color: Colors.grey[600],
+                    color: AppColors.textSecondary,
                   ),
                 ),
               ],
@@ -384,14 +373,14 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.note_outlined, size: 16, color: Colors.grey[600]),
+                  const Icon(Icons.note_outlined, size: 16, color: AppColors.textSecondary),
                   const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       ingredient.memo!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
-                        color: Colors.grey[600],
+                        color: AppColors.textSecondary,
                       ),
                     ),
                   ),
@@ -408,19 +397,19 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.grey[100],
+        color: AppColors.surfaceDim,
         borderRadius: BorderRadius.circular(6),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: Colors.grey[600]),
+          Icon(icon, size: 14, color: AppColors.textSecondary),
           const SizedBox(width: 4),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 12,
-              color: Colors.grey[700],
+              color: AppColors.textPrimary,
             ),
           ),
         ],

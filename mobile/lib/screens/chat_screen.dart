@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../models/chat_message.dart';
 import '../models/chef.dart';
 import '../models/chef_config.dart';
@@ -199,6 +200,45 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  bool _containsRecipePattern(String text) {
+    final patterns = ['재료', '조리', '만드는 법', '레시피', '인분', '분량', '순서', '단계'];
+    final matchCount = patterns.where((p) => text.contains(p)).length;
+    return matchCount >= 2;
+  }
+
+  Future<void> _convertToRecipe(String chatText) async {
+    if (_geminiService == null) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('레시피로 변환 중...')),
+    );
+
+    try {
+      final chefConfig = AIChefConfig(
+        name: _currentChef.name,
+        expertise: _currentChef.specialties,
+        cookingPhilosophy: _currentChef.philosophy,
+      );
+
+      final recipe = await _geminiService!.convertChatToRecipe(
+        chatText: chatText,
+        chefConfig: chefConfig,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        context.push('/recipe/detail', extra: recipe);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('레시피 변환에 실패했습니다.')),
+        );
+      }
+    }
+  }
+
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.hasClients) {
@@ -273,6 +313,10 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.role == MessageRole.user;
     final chefColor = Color(_currentChef.primaryColor);
+    final showRecipeButton = !isUser &&
+        !message.isLoading &&
+        message.content.isNotEmpty &&
+        _containsRecipePattern(message.content);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -293,30 +337,55 @@ class _ChatScreenState extends State<ChatScreen> {
             const SizedBox(width: AppSpacing.sm),
           ],
           Flexible(
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 14,
-                vertical: 10,
-              ),
-              decoration: BoxDecoration(
-                color: isUser ? chefColor : AppColors.surfaceDim,
-                borderRadius: BorderRadius.only(
-                  topLeft: const Radius.circular(AppRadius.lg),
-                  topRight: const Radius.circular(AppRadius.lg),
-                  bottomLeft: Radius.circular(isUser ? AppRadius.lg : 4),
-                  bottomRight: Radius.circular(isUser ? 4 : AppRadius.lg),
+            child: Column(
+              crossAxisAlignment:
+                  isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isUser ? chefColor : AppColors.surfaceDim,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(AppRadius.lg),
+                      topRight: const Radius.circular(AppRadius.lg),
+                      bottomLeft: Radius.circular(isUser ? AppRadius.lg : 4),
+                      bottomRight: Radius.circular(isUser ? 4 : AppRadius.lg),
+                    ),
+                  ),
+                  child: message.isLoading
+                      ? _buildLoadingIndicator()
+                      : Text(
+                          message.content,
+                          style: TextStyle(
+                            color:
+                                isUser ? Colors.white : AppColors.textPrimary,
+                            fontSize: 15,
+                          ),
+                        ),
                 ),
-              ),
-              child: message.isLoading
-                  ? _buildLoadingIndicator()
-                  : Text(
-                      message.content,
-                      style: TextStyle(
-                        color:
-                            isUser ? Colors.white : AppColors.textPrimary,
-                        fontSize: 15,
+                if (showRecipeButton)
+                  Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    child: TextButton.icon(
+                      onPressed: () => _convertToRecipe(message.content),
+                      icon: const Icon(Icons.bookmark_add_outlined, size: 16),
+                      label: const Text('레시피로 변환하기'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.xs,
+                        ),
+                        textStyle: AppTypography.labelSmall.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
+                  ),
+              ],
             ),
           ),
           if (isUser) const SizedBox(width: AppSpacing.sm),

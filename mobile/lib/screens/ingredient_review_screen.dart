@@ -106,12 +106,7 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${selectedIngredients.length}개의 재료가 저장되었습니다.')),
-      );
-
-      // 홈으로 이동
-      context.go('/');
+      _showPostSaveSheet(selectedIngredients.length);
     } catch (e) {
       if (!mounted) return;
 
@@ -126,6 +121,60 @@ class _IngredientReviewScreenState extends State<IngredientReviewScreen> {
         setState(() => _isSaving = false);
       }
     }
+  }
+
+  void _showPostSaveSheet(int savedCount) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle, color: Colors.green, size: 48),
+              const SizedBox(height: 12),
+              Text(
+                '$savedCount개의 재료가 추가되었습니다!',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ListTile(
+                leading: const Icon(Icons.restaurant_menu),
+                title: const Text('이 재료로 레시피 추천받기'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.go('/recipe');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.receipt_long),
+                title: const Text('영수증 더 스캔하기'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.go('/receipt-scan');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.check),
+                title: const Text('완료'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.go('/');
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override

@@ -24,6 +24,10 @@ abstract final class AppColors {
   static const info = Color(0xFF2196F3);
   static const success = Color(0xFF4CAF50);
 
+  // ── Badge ──
+  static const teal = Color(0xFF009688);
+  static const purple = Color(0xFF9C27B0);
+
   // ── Expiry Status ──
   static const expiryExpired = Color(0xFFD32F2F);
   static const expiryCritical = Color(0xFFFF9800);

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../components/chef_greeting_card.dart';
 import '../../components/expiry_badge.dart';
+import '../../components/fridge_summary_card.dart';
 import '../../components/quick_action_card.dart';
 import '../../components/recipe_card.dart';
 import '../../components/section_header.dart';
@@ -9,9 +10,11 @@ import '../../models/chef.dart';
 import '../../models/chef_config.dart';
 import '../../models/ingredient.dart';
 import '../../models/recipe.dart';
+import '../../models/recipe_quick_filter.dart';
 import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
+import '../../services/tool_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../theme/app_typography.dart';
@@ -21,12 +24,14 @@ class HomeTab extends StatefulWidget {
   final AuthService? authService;
   final IngredientService? ingredientService;
   final GeminiService? geminiService;
+  final ToolService? toolService;
 
   const HomeTab({
     super.key,
     this.authService,
     this.ingredientService,
     this.geminiService,
+    this.toolService,
   });
 
   @override
@@ -36,9 +41,11 @@ class HomeTab extends StatefulWidget {
 class _HomeTabState extends State<HomeTab> {
   late final AuthService _authService;
   late final IngredientService _ingredientService;
+  late final ToolService _toolService;
   final TextEditingController _chatController = TextEditingController();
 
   List<Ingredient> _expiringIngredients = [];
+  List<Ingredient> _allIngredients = [];
   bool _isLoading = true;
   Chef _currentChef = Chefs.defaultChef;
 
@@ -50,6 +57,7 @@ class _HomeTabState extends State<HomeTab> {
     super.initState();
     _authService = widget.authService ?? AuthService();
     _ingredientService = widget.ingredientService ?? IngredientService();
+    _toolService = widget.toolService ?? ToolService();
     _loadData();
   }
 
@@ -63,6 +71,7 @@ class _HomeTabState extends State<HomeTab> {
     try {
       final profile = await _authService.getUserProfile();
       final expiryGroup = await _ingredientService.getExpiryIngredientGroup();
+      final allIngredients = await _ingredientService.getUserIngredients();
 
       final chefId = profile?['primary_chef_id'] ?? 'baek';
       final chef = Chefs.findById(chefId) ?? Chefs.defaultChef;
@@ -75,6 +84,7 @@ class _HomeTabState extends State<HomeTab> {
       setState(() {
         _currentChef = chef;
         _expiringIngredients = expiringItems;
+        _allIngredients = allIngredients;
         _isLoading = false;
       });
     } catch (e) {
@@ -108,11 +118,13 @@ class _HomeTabState extends State<HomeTab> {
       );
 
       final geminiService = widget.geminiService ?? GeminiService();
+      final tools = await _toolService.getAvailableToolNames();
+      final servings = (profile?['household_size'] as int?) ?? 1;
       final recipe = await geminiService.generateRecipe(
         ingredients: ingredients.map((i) => i.name).toList(),
-        tools: ['프라이팬', '냄비', '전자레인지', '오븐'],
+        tools: tools,
         chefConfig: chefConfig,
-        servings: 1,
+        servings: servings,
       );
 
       if (mounted) {
@@ -166,6 +178,16 @@ class _HomeTabState extends State<HomeTab> {
             _buildQuickActions(),
             const SizedBox(height: AppSpacing.xxl),
 
+            // 냉장고 요약
+            if (_allIngredients.isNotEmpty) ...[
+              FridgeSummaryCard(
+                ingredients: _allIngredients,
+                expiringCount: _expiringIngredients.length,
+                onTap: () => context.go('/refrigerator'),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
+
             // 유통기한 임박
             if (_expiringIngredients.isNotEmpty) ...[
               _buildExpirySection(),
@@ -194,13 +216,22 @@ class _HomeTabState extends State<HomeTab> {
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           contentPadding: const EdgeInsets.all(AppSpacing.lg),
-          suffixIcon: IconButton(
-            icon: const Icon(Icons.send, color: AppColors.primary),
-            onPressed: () {
-              final text = _chatController.text.trim();
-              _chatController.clear();
-              context.push('/chat', extra: text.isNotEmpty ? text : null);
-            },
+          suffixIcon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.camera_alt_outlined, color: AppColors.textTertiary),
+                onPressed: () => context.push('/camera'),
+              ),
+              IconButton(
+                icon: const Icon(Icons.send, color: AppColors.primary),
+                onPressed: () {
+                  final text = _chatController.text.trim();
+                  _chatController.clear();
+                  context.push('/chat', extra: text.isNotEmpty ? text : null);
+                },
+              ),
+            ],
           ),
         ),
         onSubmitted: (value) {
@@ -219,7 +250,7 @@ class _HomeTabState extends State<HomeTab> {
           child: QuickActionCard(
             icon: '🍚',
             label: '혼밥',
-            onTap: () => context.go('/recipe'),
+            onTap: () => context.go('/recipe', extra: RecipeQuickFilter.solo),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
@@ -227,7 +258,7 @@ class _HomeTabState extends State<HomeTab> {
           child: QuickActionCard(
             icon: '⚡',
             label: '급해요',
-            onTap: () => context.go('/recipe'),
+            onTap: () => context.go('/recipe', extra: RecipeQuickFilter.quick),
           ),
         ),
         const SizedBox(width: AppSpacing.md),
@@ -235,7 +266,7 @@ class _HomeTabState extends State<HomeTab> {
           child: QuickActionCard(
             icon: '🥬',
             label: '재료정리',
-            onTap: () => context.go('/recipe'),
+            onTap: () => context.go('/recipe', extra: RecipeQuickFilter.clearFridge),
           ),
         ),
       ],

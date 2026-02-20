@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'models/ingredient.dart';
 import 'models/recipe.dart';
+import 'models/recipe_quick_filter.dart';
 import 'theme/app_theme.dart';
 import 'screens/login_screen.dart';
 import 'screens/onboarding/onboarding_screen.dart';
@@ -14,6 +14,7 @@ import 'screens/ingredient_add_screen.dart';
 import 'screens/ingredient_review_screen.dart';
 import 'screens/receipt_scan_screen.dart';
 import 'screens/chat_screen.dart';
+import 'screens/cooking_mode_screen.dart';
 import 'screens/recipe_detail_screen.dart';
 import 'screens/profile/chef_selection_screen.dart';
 import 'screens/profile/cooking_tools_screen.dart';
@@ -106,6 +107,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
+        path: '/recipe/cooking',
+        builder: (context, state) {
+          final recipe = state.extra as Recipe;
+          return CookingModeScreen(recipe: recipe);
+        },
+      ),
+      GoRoute(
         path: '/chat',
         builder: (context, state) {
           final initialMessage = state.extra as String?;
@@ -172,7 +180,10 @@ final routerProvider = Provider<GoRouter>((ref) {
             routes: [
               GoRoute(
                 path: '/recipe',
-                builder: (context, state) => const RecipeTab(),
+                builder: (context, state) {
+                  final filter = state.extra as RecipeQuickFilter?;
+                  return RecipeTab(quickFilter: filter);
+                },
               ),
             ],
           ),

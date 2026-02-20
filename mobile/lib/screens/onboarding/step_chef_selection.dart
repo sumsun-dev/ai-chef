@@ -109,18 +109,7 @@ class StepChefSelection extends StatelessWidget {
     ChefPreset preset,
     bool isSelected,
   ) {
-    // 프리셋별 배경 색상 힌트
-    final hintColors = {
-      'korean_grandma': const Color(0xFFFF9800),
-      'michelin_chef': const Color(0xFF9C27B0),
-      'health_chef': const Color(0xFF4CAF50),
-      'food_youtuber': const Color(0xFFFF6B35),
-      'home_master': const Color(0xFF8BC34A),
-      'baking_master': const Color(0xFFE91E63),
-      'global_explorer': const Color(0xFF2196F3),
-      'student_buddy': const Color(0xFFFF6B35),
-    };
-    final hintColor = hintColors[preset.id] ?? AppColors.primary;
+    final hintColor = Color(preset.primaryColor);
 
     return GestureDetector(
       onTap: () => _applyPreset(preset),

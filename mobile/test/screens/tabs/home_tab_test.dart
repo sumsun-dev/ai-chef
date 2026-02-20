@@ -12,6 +12,7 @@ void main() {
         wrapWithMaterialApp(HomeTab(
           authService: authService,
           ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
         )),
       );
 
@@ -24,6 +25,7 @@ void main() {
         wrapWithMaterialApp(HomeTab(
           authService: FakeAuthService(profileData: createTestProfile()),
           ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
         )),
       );
 
@@ -40,6 +42,7 @@ void main() {
         wrapWithMaterialApp(HomeTab(
           authService: FakeAuthService(profileData: createTestProfile()),
           ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
         )),
       );
 
@@ -65,6 +68,7 @@ void main() {
               safeItems: [],
             ),
           ),
+          toolService: FakeToolService(),
         )),
       );
 
@@ -79,12 +83,47 @@ void main() {
         wrapWithMaterialApp(HomeTab(
           authService: FakeAuthService(profileData: createTestProfile()),
           ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
         )),
       );
 
       await tester.pumpAndSettle();
 
       expect(find.text('유통기한 임박'), findsNothing);
+    });
+
+    testWidgets('재료가 있으면 냉장고 요약 카드 표시', (tester) async {
+      final ingredients = [
+        createTestIngredient(name: '양파'),
+        createTestIngredient(name: '당근'),
+        createTestIngredient(name: '감자'),
+      ];
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: createTestProfile()),
+          ingredientService: FakeIngredientService(ingredients: ingredients),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('내 냉장고'), findsOneWidget);
+      expect(find.text('총 3개'), findsOneWidget);
+    });
+
+    testWidgets('카메라 아이콘이 채팅 입력에 표시', (tester) async {
+      await tester.pumpWidget(
+        wrapWithMaterialApp(HomeTab(
+          authService: FakeAuthService(profileData: createTestProfile()),
+          ingredientService: FakeIngredientService(),
+          toolService: FakeToolService(),
+        )),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.byIcon(Icons.camera_alt_outlined), findsOneWidget);
     });
   });
 }

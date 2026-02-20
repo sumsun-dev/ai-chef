@@ -11,6 +11,7 @@ import 'package:ai_chef/models/recipe.dart';
 import 'package:ai_chef/services/auth_service.dart';
 import 'package:ai_chef/services/gemini_service.dart';
 import 'package:ai_chef/services/ingredient_service.dart';
+import 'package:ai_chef/services/notification_service.dart';
 import 'package:ai_chef/services/receipt_ocr_service.dart';
 import 'package:ai_chef/services/recipe_service.dart';
 import 'package:ai_chef/services/tool_service.dart';
@@ -261,6 +262,37 @@ class FakeToolService with Fake implements ToolService {
 
   @override
   Future<List<String>> getAvailableToolNames() async => tools;
+}
+
+class FakeNotificationService with Fake implements NotificationService {
+  bool scheduleCalled = false;
+  bool cancelCalled = false;
+  bool permissionRequested = false;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> requestPermission() async {
+    permissionRequested = true;
+    return true;
+  }
+
+  @override
+  Future<void> scheduleDailyExpiryCheck() async {
+    scheduleCalled = true;
+  }
+
+  @override
+  Future<void> cancelAllNotifications() async {
+    cancelCalled = true;
+  }
+
+  @override
+  Future<void> cancelNotification(int id) async {}
+
+  @override
+  Future<void> checkAndShowExpiryNotifications() async {}
 }
 
 // --- 테스트 데이터 ---

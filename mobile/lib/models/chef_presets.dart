@@ -6,6 +6,7 @@ class ChefPreset {
   final String name;
   final String description;
   final String emoji;
+  final int primaryColor;
   final AIChefConfig config;
 
   const ChefPreset({
@@ -13,6 +14,7 @@ class ChefPreset {
     required this.name,
     required this.description,
     required this.emoji,
+    required this.primaryColor,
     required this.config,
   });
 }
@@ -26,6 +28,7 @@ class ChefPresets {
       name: '할머니 손맛',
       description: '따뜻하고 정 많은 할머니처럼 정성 가득한 한식을 알려줘요',
       emoji: '👵',
+      primaryColor: 0xFFFF9800,
       config: AIChefConfig(
         name: '할머니 셰프',
         personality: ChefPersonality.motherly,
@@ -45,6 +48,7 @@ class ChefPresets {
       name: '미슐랭 스타 셰프',
       description: '최고급 프렌치/이탈리안 요리를 정확하고 전문적으로 가르쳐요',
       emoji: '⭐',
+      primaryColor: 0xFF9C27B0,
       config: AIChefConfig(
         name: '셰프 마르코',
         personality: ChefPersonality.professional,
@@ -64,6 +68,7 @@ class ChefPresets {
       name: '건강 요리 박사',
       description: '영양학적 설명과 함께 건강한 채식/비건 요리를 안내해요',
       emoji: '🥗',
+      primaryColor: 0xFF4CAF50,
       config: AIChefConfig(
         name: '닥터 그린',
         personality: ChefPersonality.scientific,
@@ -83,6 +88,7 @@ class ChefPresets {
       name: '인기 푸드 유튜버',
       description: '재미있고 쉬운 설명으로 요즘 핫한 레시피를 알려줘요',
       emoji: '📱',
+      primaryColor: 0xFFFF6B35,
       config: AIChefConfig(
         name: '쿡방 스타',
         personality: ChefPersonality.friendly,
@@ -102,6 +108,7 @@ class ChefPresets {
       name: '집밥의 달인',
       description: '실용적이고 현실적인 가정식 노하우를 전수해요',
       emoji: '🏠',
+      primaryColor: 0xFF8BC34A,
       config: AIChefConfig(
         name: '집밥 달인',
         personality: ChefPersonality.friendly,
@@ -121,6 +128,7 @@ class ChefPresets {
       name: '베이킹 마스터',
       description: '정확한 계량과 과학적 원리로 완벽한 베이킹을 도와줘요',
       emoji: '🧁',
+      primaryColor: 0xFFE91E63,
       config: AIChefConfig(
         name: '베이킹 마스터',
         personality: ChefPersonality.scientific,
@@ -140,6 +148,7 @@ class ChefPresets {
       name: '세계 미식 탐험가',
       description: '다양한 나라의 요리를 열정적으로 소개하고 도전을 응원해요',
       emoji: '🌍',
+      primaryColor: 0xFF2196F3,
       config: AIChefConfig(
         name: '월드 셰프',
         personality: ChefPersonality.coach,
@@ -159,6 +168,7 @@ class ChefPresets {
       name: '자취생 절친',
       description: '간단하고 저렴한 재료로 빠르게 만드는 요리를 알려줘요',
       emoji: '🍜',
+      primaryColor: 0xFFFF6B35,
       config: AIChefConfig(
         name: '자취 선배',
         personality: ChefPersonality.friendly,

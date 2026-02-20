@@ -221,6 +221,82 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
     }
   }
 
+  /// 채팅 텍스트에서 레시피 구조화 (Pro 모델)
+  ///
+  /// 채팅 응답에 포함된 레시피 정보를 JSON 구조로 변환합니다.
+  Future<Recipe> convertChatToRecipe({
+    required String chatText,
+    required AIChefConfig chefConfig,
+  }) async {
+    final systemPrompt = generateSystemPrompt(chefConfig);
+
+    final prompt = '''다음 텍스트에서 레시피 정보를 추출하여 구조화된 JSON으로 변환해주세요.
+
+## 텍스트
+$chatText
+
+## 응답 형식 (JSON)
+```json
+{
+  "title": "요리명",
+  "description": "한 줄 설명",
+  "cuisine": "요리 스타일",
+  "difficulty": "easy|medium|hard",
+  "cookingTime": 조리시간(분),
+  "servings": 인원수,
+  "ingredients": [
+    {
+      "name": "재료명",
+      "quantity": "양",
+      "unit": "단위",
+      "isAvailable": true
+    }
+  ],
+  "tools": [],
+  "instructions": [
+    {
+      "step": 1,
+      "title": "단계 제목",
+      "description": "상세 설명",
+      "time": 소요시간(분),
+      "tips": null
+    }
+  ],
+  "nutrition": {
+    "calories": 0,
+    "protein": 0,
+    "carbs": 0,
+    "fat": 0
+  },
+  "chefNote": "셰프의 한마디"
+}
+```
+
+텍스트에서 추출할 수 없는 필드는 합리적인 추정값을 사용하세요.''';
+
+    final recipeModel = GenerativeModel(
+      model: AppConstants.geminiProModel,
+      apiKey: _apiKey,
+      safetySettings: _safetySettings,
+      systemInstruction: Content.text(systemPrompt),
+    );
+
+    final response = await recipeModel.generateContent([Content.text(prompt)]);
+    final text = response.text ?? '';
+
+    try {
+      final jsonMatch = RegExp(r'```json\n?([\s\S]*?)\n?```').firstMatch(text);
+      if (jsonMatch != null) {
+        final jsonData = json.decode(jsonMatch.group(1)!);
+        return Recipe.fromJson(jsonData);
+      }
+      final jsonData = json.decode(text);
+      return Recipe.fromJson(jsonData);
+    } catch (e) {
+      throw Exception('레시피 변환 실패: $e');
+    }
+  }
+
   /// 요리 사진 분석 (Vision API)
   ///
   /// 사진을 분석하여 익힘 정도, 플레이팅 상태, 개선점 등을 피드백합니다.

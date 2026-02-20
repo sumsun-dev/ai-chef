@@ -3,6 +3,9 @@ import 'package:go_router/go_router.dart';
 
 import '../models/ingredient.dart';
 import '../services/ingredient_service.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
 
 /// 재료 직접 입력 화면
 class IngredientAddScreen extends StatefulWidget {
@@ -136,12 +139,15 @@ class _IngredientAddScreenState extends State<IngredientAddScreen> {
       }
 
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(widget.isEditMode ? '재료가 수정되었습니다.' : '재료가 추가되었습니다.'),
-        ),
-      );
-      context.pop(true);
+
+      if (widget.isEditMode) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('재료가 수정되었습니다.')),
+        );
+        context.pop(true);
+      } else {
+        _showPostSaveSheet(_nameController.text.trim());
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -355,7 +361,7 @@ class _IngredientAddScreenState extends State<IngredientAddScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey.shade300),
+          border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -368,7 +374,7 @@ class _IngredientAddScreenState extends State<IngredientAddScreen> {
                 children: [
                   Text(
                     label,
-                    style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                    style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -385,10 +391,80 @@ class _IngredientAddScreenState extends State<IngredientAddScreen> {
               IconButton(
                 icon: const Icon(Icons.clear, size: 20),
                 onPressed: onClear,
-                color: Colors.grey,
+                color: AppColors.textTertiary,
               ),
-            const Icon(Icons.chevron_right, color: Colors.grey),
+            const Icon(Icons.chevron_right, color: AppColors.textTertiary),
           ],
+        ),
+      ),
+    );
+  }
+
+  void _showPostSaveSheet(String ingredientName) {
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.check_circle,
+                color: AppColors.success,
+                size: 48,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                '$ingredientName이(가) 추가되었습니다!',
+                style: AppTypography.headlineSmall.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xxl),
+              ListTile(
+                leading: const Icon(Icons.restaurant_menu, color: AppColors.primary),
+                title: const Text('이 재료로 레시피 추천받기'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.pop(true);
+                  context.go('/recipe');
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.add_circle_outline, color: AppColors.accent),
+                title: const Text('재료 더 추가하기'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  // 폼 초기화
+                  _formKey.currentState?.reset();
+                  _nameController.clear();
+                  _quantityController.text = '1';
+                  _priceController.clear();
+                  _memoController.clear();
+                  setState(() {
+                    _selectedCategory = 'other';
+                    _selectedUnit = '개';
+                    _selectedStorage = StorageLocation.fridge;
+                    _expiryDate = DateTime.now().add(const Duration(days: 7));
+                    _purchaseDate = DateTime.now();
+                  });
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.check, color: AppColors.textSecondary),
+                title: const Text('완료'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  context.pop(true);
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );

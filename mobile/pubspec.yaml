@@ -45,6 +45,8 @@ dependencies:
   flutter_local_notifications: ^19.2.0
   timezone: ^0.10.1
   intl: ^0.20.2
+  wakelock_plus: ^1.4.0
+  shared_preferences: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -72,6 +74,18 @@ flutter:
 
   # assets:
   #   - .env  # dart-define으로 전환됨
+
+  fonts:
+    - family: Pretendard
+      fonts:
+        - asset: assets/fonts/Pretendard-Regular.otf
+          weight: 400
+        - asset: assets/fonts/Pretendard-Medium.otf
+          weight: 500
+        - asset: assets/fonts/Pretendard-SemiBold.otf
+          weight: 600
+        - asset: assets/fonts/Pretendard-Bold.otf
+          weight: 700
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

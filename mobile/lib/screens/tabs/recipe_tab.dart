@@ -7,6 +7,7 @@ import '../../models/chef.dart';
 import '../../models/chef_config.dart';
 import '../../models/ingredient.dart';
 import '../../models/recipe.dart';
+import '../../models/recipe_quick_filter.dart';
 import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
@@ -23,6 +24,7 @@ class RecipeTab extends StatefulWidget {
   final RecipeService? recipeService;
   final AuthService? authService;
   final ToolService? toolService;
+  final RecipeQuickFilter? quickFilter;
 
   const RecipeTab({
     super.key,
@@ -31,6 +33,7 @@ class RecipeTab extends StatefulWidget {
     this.recipeService,
     this.authService,
     this.toolService,
+    this.quickFilter,
   });
 
   @override
@@ -56,6 +59,8 @@ class _RecipeTabState extends State<RecipeTab> {
   int _servings = 1;
   int? _maxCookingTime;
   RecipeDifficulty? _difficulty;
+  bool _useExpiringFirst = false;
+  String? _activeFilterLabel;
 
   @override
   void initState() {
@@ -64,9 +69,19 @@ class _RecipeTabState extends State<RecipeTab> {
     _authService = widget.authService ?? AuthService();
     _recipeService = widget.recipeService ?? RecipeService();
     _toolService = widget.toolService ?? ToolService();
+    _applyQuickFilter(widget.quickFilter);
     _loadIngredients();
     _loadBookmarkedRecipes();
     _loadHistory();
+  }
+
+  void _applyQuickFilter(RecipeQuickFilter? filter) {
+    if (filter == null) return;
+    _servings = filter.servings ?? _servings;
+    _maxCookingTime = filter.maxCookingTime;
+    _difficulty = filter.difficulty;
+    _useExpiringFirst = filter.useExpiringFirst;
+    _activeFilterLabel = filter.label;
   }
 
   Future<void> _loadIngredients() async {
@@ -133,7 +148,13 @@ class _RecipeTabState extends State<RecipeTab> {
         cookingPhilosophy: chef.philosophy,
       );
 
-      final ingredientNames = _ingredients.map((i) => i.name).toList();
+      var sortedIngredients = List<Ingredient>.from(_ingredients);
+      if (_useExpiringFirst) {
+        sortedIngredients.sort(
+          (a, b) => a.expiryDate.compareTo(b.expiryDate),
+        );
+      }
+      final ingredientNames = sortedIngredients.map((i) => i.name).toList();
       final geminiService = widget.geminiService ?? GeminiService();
       final tools = await _toolService.getAvailableToolNames();
 
@@ -200,6 +221,10 @@ class _RecipeTabState extends State<RecipeTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (_activeFilterLabel != null) ...[
+            _buildActiveFilterBanner(),
+            const SizedBox(height: AppSpacing.md),
+          ],
           _buildIngredientStatus(),
           const SizedBox(height: AppSpacing.lg),
 
@@ -424,6 +449,47 @@ class _RecipeTabState extends State<RecipeTab> {
             style: AppTypography.bodySmall.copyWith(
               color: AppColors.textSecondary,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveFilterBanner() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.auto_awesome, size: 18, color: AppColors.primary),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              '"$_activeFilterLabel" 모드로 조건이 설정되었습니다',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _activeFilterLabel = null;
+                _servings = 1;
+                _maxCookingTime = null;
+                _difficulty = null;
+                _useExpiringFirst = false;
+              });
+            },
+            child: const Icon(Icons.close, size: 18, color: AppColors.primary),
           ),
         ],
       ),

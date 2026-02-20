@@ -12,9 +12,12 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 - **3단계 온보딩** - AI 셰프 선택, 요리 실력 설정, 완료까지 간결한 멀티스텝
 - **재료 관리** - 영수증 OCR 자동 등록, 유통기한 알림, 검색/카테고리 필터/정렬
 - **맞춤 레시피** - 보유 재료와 도구 기반 AI 레시피 추천, 저장/북마크
-- **AI 채팅** - 셰프와 실시간 대화, DB 기록 저장/복원
+- **빠른 액션** - 혼밥/급해요/재료정리 원탭 필터로 상황별 레시피 즉시 추천
+- **요리 시작 모드** - 단계별 PageView, 카운트다운 타이머, 화면 꺼짐 방지, 완료 시 기록 자동 저장
+- **AI 채팅 + 레시피 변환** - 셰프와 실시간 대화, 응답에서 레시피 패턴 감지 시 구조화된 레시피로 변환/저장
 - **프로필 관리** - 셰프 변경, 조리 도구 관리, 요리 설정 편집
 - **시각적 가이드** - 사진 분석으로 실시간 요리 피드백
+- **알림 설정** - 유통기한 알림 스케줄/해제, SharedPreferences 영구 저장
 
 ---
 
@@ -30,6 +33,8 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 | AI | Google Generative AI 0.4 |
 | Camera | Image Picker |
 | Notifications | Flutter Local Notifications 19 |
+| Wakelock | Wakelock Plus |
+| Persistence | SharedPreferences |
 
 ### Web (Next.js)
 | 구분 | 기술 |
@@ -65,15 +70,16 @@ ai-chef/
 │           └── __tests__/  # Vitest 단위 테스트
 ├── mobile/                 # Flutter 모바일 앱
 │   ├── lib/
-│   │   ├── components/     # 공통 UI 컴포넌트 (ChefGreetingCard, RecipeCard 등)
-│   │   ├── models/         # Ingredient, Recipe, Chef, ChatMessage 등 데이터 모델
-│   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, Profile)
+│   │   ├── components/     # 공통 UI 컴포넌트 (ChefGreetingCard, RecipeCard, CookingTimer 등)
+│   │   ├── models/         # Ingredient, Recipe, Chef, ChatMessage, RecipeQuickFilter 등
+│   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, CookingMode, Chat 등)
 │   │   │   ├── tabs/       # Bottom navigation 탭 화면
 │   │   │   ├── onboarding/ # 3단계 온보딩 (셰프 선택 → 실력 → 완료)
-│   │   │   └── profile/    # 프로필 관리 (셰프/도구/설정)
-│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe 서비스
+│   │   │   ├── profile/    # 프로필 관리 (셰프/도구/설정)
+│   │   │   └── settings/   # 설정 (알림, 개인정보, 도움말)
+│   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification 서비스
 │   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
-│   └── test/               # 위젯/단위 테스트 (157개)
+│   └── test/               # 위젯/단위 테스트 (232개)
 ├── supabase/
 │   └── migrations/         # DB 마이그레이션 (source of truth)
 ├── docs/                   # PRD, 비용 추정, 설계 문서
