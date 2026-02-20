@@ -23,9 +23,15 @@ class NotificationService {
   static const String _channelName = '유통기한 알림';
   static const String _channelDescription = '재료 유통기한 알림';
 
+  /// 레시피 추천 채널
+  static const String _recommendationChannelId = 'recipe_recommendations';
+  static const String _recommendationChannelName = '레시피 추천';
+  static const String _recommendationChannelDescription = '맞춤 레시피 추천 알림';
+
   /// 알림 ID 범위
   static const int _dailyCheckNotificationId = 0;
   static const int _expiryNotificationBaseId = 1000;
+  static const int _recommendationNotificationId = 2000;
 
   /// 알림 서비스 초기화
   Future<void> initialize() async {
@@ -187,6 +193,39 @@ class NotificationService {
     );
 
     await _notifications.show(id, title, body, details);
+  }
+
+  /// 레시피 추천 알림 표시
+  Future<void> showRecipeRecommendation({required String message}) async {
+    if (!_isInitialized) await initialize();
+
+    final androidDetails = AndroidNotificationDetails(
+      _recommendationChannelId,
+      _recommendationChannelName,
+      channelDescription: _recommendationChannelDescription,
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+      icon: '@mipmap/ic_launcher',
+      styleInformation: BigTextStyleInformation(message),
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    final details = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      _recommendationNotificationId,
+      '오늘의 추천',
+      message,
+      details,
+    );
   }
 
   /// 매일 아침 9시에 유통기한 체크 알림 스케줄

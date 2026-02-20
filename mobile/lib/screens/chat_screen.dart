@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../components/ai_response_card.dart';
+import '../models/ai_response.dart';
 import '../models/chat_message.dart';
 import '../models/chef.dart';
 import '../models/chef_config.dart';
 import '../models/ingredient.dart';
 import '../services/auth_service.dart';
 import '../services/chat_service.dart';
+import '../services/function_calling_service.dart';
 import '../services/gemini_service.dart';
 import '../services/ingredient_service.dart';
 import '../theme/app_colors.dart';
@@ -30,10 +33,12 @@ class _ChatScreenState extends State<ChatScreen> {
   final ChatService _chatService = ChatService();
 
   final List<ChatMessage> _messages = [];
+  final Map<String, AIResponse> _aiResponses = {};
   bool _isLoading = false;
   Chef _currentChef = Chefs.defaultChef;
   List<Ingredient> _ingredients = [];
   GeminiService? _geminiService;
+  FunctionCallingService? _functionCallingService;
   bool _hasHistory = false;
 
   @override
@@ -52,6 +57,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _initChat() async {
     try {
       _geminiService = GeminiService();
+      _functionCallingService = FunctionCallingService(
+        ingredientService: _ingredientService,
+      );
     } catch (_) {
       // API 키 미설정 시 무시
     }
@@ -151,28 +159,65 @@ class _ChatScreenState extends State<ChatScreen> {
         cookingPhilosophy: _currentChef.philosophy,
       );
 
-      final response = await _geminiService!.sendMessage(
-        message: text.trim(),
-        chefConfig: chefConfig,
-        ingredients: ingredientNames,
-      );
-
-      if (mounted) {
-        final assistantMessage = ChatMessage(
-          role: MessageRole.assistant,
-          content: response,
-          chefId: _currentChef.id,
+      // Function Calling이 가능하면 사용, 아니면 기본 sendMessage
+      if (_functionCallingService != null) {
+        final aiResponse = await _geminiService!.sendMessageWithTools(
+          message: text.trim(),
+          chefConfig: chefConfig,
+          functionCallingService: _functionCallingService!,
+          ingredients: ingredientNames,
         );
 
-        setState(() {
-          final loadingIndex = _messages.indexWhere((m) => m.isLoading);
-          if (loadingIndex != -1) {
-            _messages[loadingIndex] = assistantMessage;
-          }
-          _isLoading = false;
-        });
+        if (mounted) {
+          final responseText = switch (aiResponse) {
+            TextResponse(text: final t) => t,
+            RecipeResponse(summary: final s) => s,
+            IngredientListResponse(commentary: final c) => c,
+            ActionResponse(message: final m) => m,
+          };
 
-        _saveToDB(userMessage, assistantMessage);
+          final assistantMessage = ChatMessage(
+            role: MessageRole.assistant,
+            content: responseText,
+            chefId: _currentChef.id,
+            metadata: {'responseType': aiResponse.runtimeType.toString()},
+          );
+
+          setState(() {
+            final loadingIndex = _messages.indexWhere((m) => m.isLoading);
+            if (loadingIndex != -1) {
+              _messages[loadingIndex] = assistantMessage;
+              _aiResponses[assistantMessage.id] = aiResponse;
+            }
+            _isLoading = false;
+          });
+
+          _saveToDB(userMessage, assistantMessage);
+        }
+      } else {
+        final response = await _geminiService!.sendMessage(
+          message: text.trim(),
+          chefConfig: chefConfig,
+          ingredients: ingredientNames,
+        );
+
+        if (mounted) {
+          final assistantMessage = ChatMessage(
+            role: MessageRole.assistant,
+            content: response,
+            chefId: _currentChef.id,
+          );
+
+          setState(() {
+            final loadingIndex = _messages.indexWhere((m) => m.isLoading);
+            if (loadingIndex != -1) {
+              _messages[loadingIndex] = assistantMessage;
+            }
+            _isLoading = false;
+          });
+
+          _saveToDB(userMessage, assistantMessage);
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -313,10 +358,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMessageBubble(ChatMessage message) {
     final isUser = message.role == MessageRole.user;
     final chefColor = Color(_currentChef.primaryColor);
-    final showRecipeButton = !isUser &&
-        !message.isLoading &&
-        message.content.isNotEmpty &&
-        _containsRecipePattern(message.content);
+    final aiResponse = _aiResponses[message.id];
+    final hasSpecialCard =
+        aiResponse != null && aiResponse is! TextResponse;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
@@ -357,16 +401,34 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   child: message.isLoading
                       ? _buildLoadingIndicator()
-                      : Text(
-                          message.content,
-                          style: TextStyle(
-                            color:
-                                isUser ? Colors.white : AppColors.textPrimary,
-                            fontSize: 15,
-                          ),
-                        ),
+                      : aiResponse != null
+                          ? Builder(builder: (_) {
+                            final recipeTap = aiResponse is RecipeResponse
+                                ? () => context.push('/recipe/detail',
+                                    extra: aiResponse.recipe)
+                                : null;
+                            return AIResponseCard(
+                              response: aiResponse,
+                              onRecipeTap: recipeTap,
+                            );
+                          })
+                          : Text(
+                              message.content,
+                              style: TextStyle(
+                                color: isUser
+                                    ? Colors.white
+                                    : AppColors.textPrimary,
+                                fontSize: 15,
+                              ),
+                            ),
                 ),
-                if (showRecipeButton)
+                // 레시피 패턴 감지 시 변환 버튼 (Function Calling 미사용 폴백)
+                if (!isUser &&
+                    !message.isLoading &&
+                    !hasSpecialCard &&
+                    aiResponse == null &&
+                    message.content.isNotEmpty &&
+                    _containsRecipePattern(message.content))
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.xs),
                     child: TextButton.icon(

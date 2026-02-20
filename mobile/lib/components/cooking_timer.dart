@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../services/cooking_audio_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -17,11 +18,15 @@ class CookingTimer extends StatefulWidget {
   /// 자동 시작 여부
   final bool autoStart;
 
+  /// 오디오/진동 서비스 (optional DI)
+  final CookingAudioService? audioService;
+
   const CookingTimer({
     super.key,
     required this.minutes,
     this.onComplete,
     this.autoStart = false,
+    this.audioService,
   });
 
   @override
@@ -54,14 +59,18 @@ class CookingTimerState extends State<CookingTimer> {
     if (_isRunning) return;
     setState(() => _isRunning = true);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      setState(() => _remainingSeconds--);
       if (_remainingSeconds <= 0) {
         timer.cancel();
         setState(() => _isRunning = false);
-        widget.onComplete?.call();
-        return;
+        _onTimerComplete();
       }
-      setState(() => _remainingSeconds--);
     });
+  }
+
+  Future<void> _onTimerComplete() async {
+    await widget.audioService?.notifyTimerComplete();
+    widget.onComplete?.call();
   }
 
   void _pause() {

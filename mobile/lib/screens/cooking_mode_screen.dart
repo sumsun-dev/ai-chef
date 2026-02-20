@@ -3,7 +3,10 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../components/cooking_timer.dart';
 import '../models/recipe.dart';
+import '../services/cooking_audio_service.dart';
 import '../services/recipe_service.dart';
+import '../services/tts_service.dart';
+import '../services/voice_command_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -12,14 +15,21 @@ import '../theme/app_typography.dart';
 ///
 /// PageView로 한 번에 한 단계 집중 표시,
 /// 단계별 카운트다운 타이머, 완료 시 기록 자동 저장.
+/// TTS로 단계 자동 읽기, 음성 명령으로 핸즈프리 조작.
 class CookingModeScreen extends StatefulWidget {
   final Recipe recipe;
   final RecipeService? recipeService;
+  final TtsService? ttsService;
+  final VoiceCommandService? voiceCommandService;
+  final CookingAudioService? audioService;
 
   const CookingModeScreen({
     super.key,
     required this.recipe,
     this.recipeService,
+    this.ttsService,
+    this.voiceCommandService,
+    this.audioService,
   });
 
   @override
@@ -29,16 +39,24 @@ class CookingModeScreen extends StatefulWidget {
 class _CookingModeScreenState extends State<CookingModeScreen> {
   late final PageController _pageController;
   late final RecipeService _recipeService;
+  late final TtsService _ttsService;
+  late final VoiceCommandService _voiceCommandService;
+  late final CookingAudioService _audioService;
   late final List<RecipeInstruction> _steps;
   final Set<int> _completedSteps = {};
   int _currentPage = 0;
   bool _isSavingHistory = false;
+  bool _isTtsEnabled = false;
+  bool _isVoiceListening = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
     _recipeService = widget.recipeService ?? RecipeService();
+    _ttsService = widget.ttsService ?? TtsService();
+    _voiceCommandService = widget.voiceCommandService ?? VoiceCommandService();
+    _audioService = widget.audioService ?? CookingAudioService();
     _steps = widget.recipe.instructions;
     WakelockPlus.enable();
   }
@@ -46,8 +64,69 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
   @override
   void dispose() {
     _pageController.dispose();
+    _ttsService.dispose();
+    _voiceCommandService.stopListening();
+    _audioService.dispose();
     WakelockPlus.disable();
     super.dispose();
+  }
+
+  /// TTS로 현재 단계 읽기
+  Future<void> _speakCurrentStep() async {
+    if (!_isTtsEnabled || _steps.isEmpty) return;
+    final step = _steps[_currentPage];
+    final text = '${step.step}단계. ${step.title}. ${step.description}';
+    await _ttsService.speak(text);
+  }
+
+  /// TTS 토글
+  void _toggleTts() {
+    setState(() => _isTtsEnabled = !_isTtsEnabled);
+    if (_isTtsEnabled) {
+      _speakCurrentStep();
+    } else {
+      _ttsService.stop();
+    }
+  }
+
+  /// 음성 명령 리스닝 토글
+  Future<void> _toggleVoiceListening() async {
+    if (_isVoiceListening) {
+      await _voiceCommandService.stopListening();
+      setState(() => _isVoiceListening = false);
+      return;
+    }
+
+    setState(() => _isVoiceListening = true);
+    await _voiceCommandService.startListening(
+      onCommand: _handleVoiceCommand,
+    );
+  }
+
+  /// 음성 명령 처리
+  void _handleVoiceCommand(VoiceCommand command) {
+    setState(() => _isVoiceListening = false);
+
+    switch (command) {
+      case NextStepCommand():
+        if (_currentPage < _steps.length - 1) {
+          _goToPage(_currentPage + 1);
+        }
+      case PreviousStepCommand():
+        if (_currentPage > 0) {
+          _goToPage(_currentPage - 1);
+        }
+      case StartTimerCommand():
+        // 타이머 시작은 위젯 내부에서 처리
+        break;
+      case PauseTimerCommand():
+        // 타이머 일시정지는 위젯 내부에서 처리
+        break;
+      case RepeatCommand():
+        _speakCurrentStep();
+      case UnknownCommand():
+        break;
+    }
   }
 
   void _goToPage(int page) {
@@ -186,6 +265,7 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
                       itemCount: _steps.length,
                       onPageChanged: (page) {
                         setState(() => _currentPage = page);
+                        _speakCurrentStep();
                       },
                       itemBuilder: (context, index) {
                         return _buildStepPage(_steps[index], index);
@@ -270,6 +350,7 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
             CookingTimer(
               key: ValueKey('timer_$index'),
               minutes: step.time,
+              audioService: _audioService,
             ),
             const SizedBox(height: AppSpacing.xxl),
           ],
@@ -339,6 +420,28 @@ class _CookingModeScreenState extends State<CookingModeScreen> {
               const SizedBox(width: 100),
 
             const Spacer(),
+
+            // TTS 토글
+            IconButton(
+              onPressed: _toggleTts,
+              icon: Icon(
+                _isTtsEnabled ? Icons.volume_up : Icons.volume_off,
+                color: _isTtsEnabled ? AppColors.primary : AppColors.textTertiary,
+              ),
+              tooltip: 'TTS 읽기',
+            ),
+
+            // 음성 명령
+            IconButton(
+              onPressed: _toggleVoiceListening,
+              icon: Icon(
+                _isVoiceListening ? Icons.mic : Icons.mic_none,
+                color: _isVoiceListening ? AppColors.error : AppColors.textTertiary,
+              ),
+              tooltip: '음성 명령',
+            ),
+
+            const SizedBox(width: AppSpacing.sm),
 
             // 완료/다음 버튼
             FilledButton.icon(

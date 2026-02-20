@@ -4,17 +4,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthResponse, AuthState, User;
 
+import 'package:ai_chef/models/ai_response.dart';
 import 'package:ai_chef/models/ingredient.dart';
 import 'package:ai_chef/models/cooking_feedback.dart';
 import 'package:ai_chef/models/chef_config.dart';
 import 'package:ai_chef/models/recipe.dart';
 import 'package:ai_chef/services/auth_service.dart';
+import 'package:ai_chef/services/cooking_audio_service.dart';
+import 'package:ai_chef/services/function_calling_service.dart';
 import 'package:ai_chef/services/gemini_service.dart';
 import 'package:ai_chef/services/ingredient_service.dart';
 import 'package:ai_chef/services/notification_service.dart';
 import 'package:ai_chef/services/receipt_ocr_service.dart';
 import 'package:ai_chef/services/recipe_service.dart';
+import 'package:ai_chef/services/tts_service.dart';
 import 'package:ai_chef/services/tool_service.dart';
+import 'package:ai_chef/services/voice_command_service.dart';
 
 export 'package:ai_chef/models/ingredient.dart' show ExpiryIngredientGroup;
 
@@ -171,6 +176,17 @@ class FakeGeminiService with Fake implements GeminiService {
   String getSpeakingStylePrompt(dynamic style) => 'test';
 
   @override
+  Future<AIResponse> sendMessageWithTools({
+    required String message,
+    required dynamic chefConfig,
+    required FunctionCallingService functionCallingService,
+    List<String>? ingredients,
+    List<String>? tools,
+  }) async {
+    return TextResponse(text: '테스트 Function Calling 응답');
+  }
+
+  @override
   Future<CookingFeedback> analyzeCookingPhoto({
     required Uint8List imageBytes,
     required String mimeType,
@@ -268,6 +284,7 @@ class FakeNotificationService with Fake implements NotificationService {
   bool scheduleCalled = false;
   bool cancelCalled = false;
   bool permissionRequested = false;
+  String? lastRecommendationMessage;
 
   @override
   Future<void> initialize() async {}
@@ -293,6 +310,86 @@ class FakeNotificationService with Fake implements NotificationService {
 
   @override
   Future<void> checkAndShowExpiryNotifications() async {}
+
+  @override
+  Future<void> showRecipeRecommendation({required String message}) async {
+    lastRecommendationMessage = message;
+  }
+}
+
+class FakeTtsService with Fake implements TtsService {
+  String? lastSpokenText;
+  bool stopCalled = false;
+  int speakCallCount = 0;
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<void> speak(String text) async {
+    lastSpokenText = text;
+    speakCallCount++;
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalled = true;
+  }
+
+  @override
+  Future<void> dispose() async {
+    stopCalled = true;
+  }
+}
+
+class FakeVoiceCommandService with Fake implements VoiceCommandService {
+  bool isListeningResult = false;
+
+  @override
+  bool get isListening => isListeningResult;
+
+  @override
+  Future<bool> initialize() async => true;
+
+  @override
+  Future<void> startListening({
+    required void Function(VoiceCommand command) onCommand,
+    void Function(String partialText)? onPartial,
+  }) async {
+    isListeningResult = true;
+  }
+
+  @override
+  Future<void> stopListening() async {
+    isListeningResult = false;
+  }
+
+  @override
+  VoiceCommand parseCommand(String text) => UnknownCommand(text);
+}
+
+class FakeCookingAudioService with Fake implements CookingAudioService {
+  int playCount = 0;
+  int vibrateCount = 0;
+  int notifyCount = 0;
+
+  @override
+  Future<void> playTimerDone() async {
+    playCount++;
+  }
+
+  @override
+  Future<void> vibrate() async {
+    vibrateCount++;
+  }
+
+  @override
+  Future<void> notifyTimerComplete() async {
+    notifyCount++;
+  }
+
+  @override
+  Future<void> dispose() async {}
 }
 
 // --- 테스트 데이터 ---

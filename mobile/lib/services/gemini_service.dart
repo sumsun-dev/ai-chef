@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:google_generative_ai/google_generative_ai.dart';
 import '../constants/app_constants.dart';
 import '../models/models.dart';
+import 'function_calling_service.dart';
 
 /// Gemini API 서비스
 ///
@@ -127,6 +128,81 @@ ${config.cookingPhilosophy ?? "맛있고 건강한 요리를 쉽게 만들 수 �
 
     final response = await chatModel.generateContent([Content.text(userPrompt)]);
     return response.text ?? '응답을 생성할 수 없습니다.';
+  }
+
+  /// Function Calling 통합 채팅 (Flash 모델 + Tools)
+  ///
+  /// Gemini가 필요한 함수를 자동으로 호출하고,
+  /// 결과를 기반으로 응답을 생성합니다.
+  /// 최대 3라운드의 함수 호출 루프로 무한 루프를 방지합니다.
+  Future<AIResponse> sendMessageWithTools({
+    required String message,
+    required AIChefConfig chefConfig,
+    required FunctionCallingService functionCallingService,
+    List<String>? ingredients,
+    List<String>? tools,
+  }) async {
+    final systemPrompt = generateSystemPrompt(chefConfig);
+
+    final chatModel = GenerativeModel(
+      model: AppConstants.geminiFlashModel,
+      apiKey: _apiKey,
+      safetySettings: _safetySettings,
+      systemInstruction: Content.text(systemPrompt),
+      tools: functionCallingService.tools,
+    );
+
+    String contextPrompt = '';
+    if (ingredients != null && ingredients.isNotEmpty) {
+      contextPrompt += '[보유 재료]: ${ingredients.join(", ")}\n';
+    }
+    if (tools != null && tools.isNotEmpty) {
+      contextPrompt += '[보유 도구]: ${tools.join(", ")}\n';
+    }
+
+    final userPrompt = '$contextPrompt$message';
+    final contents = <Content>[Content.text(userPrompt)];
+
+    AIResponse? lastMetadata;
+
+    // 최대 3라운드 함수 호출 루프 (무한 루프 방지)
+    for (var round = 0; round < 3; round++) {
+      final response = await chatModel.generateContent(contents);
+      final functionCalls = response.functionCalls.toList();
+
+      if (functionCalls.isEmpty) {
+        final text = response.text ?? '응답을 생성할 수 없습니다.';
+        if (lastMetadata != null) {
+          return lastMetadata;
+        }
+        return TextResponse(text: text);
+      }
+
+      // 함수 호출 결과 수집
+      final functionResponses = <FunctionResponse>[];
+      for (final call in functionCalls) {
+        final result = await functionCallingService.dispatch(call);
+        functionResponses.add(result.toFunctionResponse());
+
+        // 메타데이터 파싱
+        final metadata = functionCallingService.parseResponseMetadata(
+          call.name,
+          result.response,
+        );
+        if (metadata != null) {
+          lastMetadata = metadata;
+        }
+      }
+
+      // 함수 응답을 대화에 추가
+      contents.add(Content.model(
+        functionCalls.map((c) => FunctionCall(c.name, c.args)).toList(),
+      ));
+      contents.add(Content.functionResponses(functionResponses));
+    }
+
+    // 3라운드 후에도 끝나지 않은 경우
+    return TextResponse(text: '요청을 처리하는 데 시간이 걸리고 있습니다. 다시 시도해 주세요.');
   }
 
   /// 레시피 생성 (Pro 모델)

@@ -14,6 +14,7 @@ import '../../models/recipe_quick_filter.dart';
 import '../../services/auth_service.dart';
 import '../../services/gemini_service.dart';
 import '../../services/ingredient_service.dart';
+import '../../services/smart_recommendation_service.dart';
 import '../../services/tool_service.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -51,6 +52,7 @@ class _HomeTabState extends State<HomeTab> {
 
   Recipe? _recommendedRecipe;
   bool _isLoadingRecommendation = false;
+  String? _smartRecommendation;
 
   @override
   void initState() {
@@ -81,10 +83,16 @@ class _HomeTabState extends State<HomeTab> {
         ...expiryGroup.criticalItems,
       ].take(5).toList();
 
+      // 스마트 추천 메시지 생성 (서비스 생성 없이 정적 호출)
+      final smartMessage = SmartRecommendationService.buildRecommendationMessage(
+        expiringIngredients: expiringItems,
+      );
+
       setState(() {
         _currentChef = chef;
         _expiringIngredients = expiringItems;
         _allIngredients = allIngredients;
+        _smartRecommendation = smartMessage;
         _isLoading = false;
       });
     } catch (e) {
@@ -192,6 +200,12 @@ class _HomeTabState extends State<HomeTab> {
             if (_expiringIngredients.isNotEmpty) ...[
               _buildExpirySection(),
               const SizedBox(height: AppSpacing.xxl),
+            ],
+
+            // 스마트 추천 카드
+            if (_smartRecommendation != null) ...[
+              _buildSmartRecommendationCard(),
+              const SizedBox(height: AppSpacing.lg),
             ],
 
             // 오늘의 추천
@@ -332,6 +346,75 @@ class _HomeTabState extends State<HomeTab> {
             dDayString: ingredient.dDayString,
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSmartRecommendationCard() {
+    return InkWell(
+      onTap: () => context.push('/chat', extra: _smartRecommendation),
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AppColors.primary.withValues(alpha: 0.08),
+              AppColors.primary.withValues(alpha: 0.04),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.15),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.auto_awesome,
+                color: AppColors.primary,
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'AI 추천',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _smartRecommendation!,
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_right,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ],
+        ),
       ),
     );
   }

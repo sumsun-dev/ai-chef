@@ -11,6 +11,9 @@ class ChatMessage {
   final String? userId;
   final String? chefId;
 
+  /// Function Calling 결과 메타데이터
+  final Map<String, dynamic>? metadata;
+
   ChatMessage({
     String? id,
     required this.role,
@@ -19,6 +22,7 @@ class ChatMessage {
     this.isLoading = false,
     this.userId,
     this.chefId,
+    this.metadata,
   })  : id = id ?? DateTime.now().millisecondsSinceEpoch.toString(),
         timestamp = timestamp ?? DateTime.now();
 
@@ -53,6 +57,7 @@ class ChatMessage {
     bool? isLoading,
     String? userId,
     String? chefId,
+    Map<String, dynamic>? metadata,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -62,6 +67,7 @@ class ChatMessage {
       isLoading: isLoading ?? this.isLoading,
       userId: userId ?? this.userId,
       chefId: chefId ?? this.chefId,
+      metadata: metadata ?? this.metadata,
     );
   }
 }
