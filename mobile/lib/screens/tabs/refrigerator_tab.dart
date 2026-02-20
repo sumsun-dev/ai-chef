@@ -11,14 +11,16 @@ import '../../theme/app_typography.dart';
 
 /// 냉장고 탭
 class RefrigeratorTab extends StatefulWidget {
-  const RefrigeratorTab({super.key});
+  final IngredientService? ingredientService;
+
+  const RefrigeratorTab({super.key, this.ingredientService});
 
   @override
   State<RefrigeratorTab> createState() => _RefrigeratorTabState();
 }
 
 class _RefrigeratorTabState extends State<RefrigeratorTab> {
-  final IngredientService _ingredientService = IngredientService();
+  late final IngredientService _ingredientService;
   List<Ingredient> _ingredients = [];
   bool _isLoading = true;
   String _selectedLocation = 'all';
@@ -51,6 +53,7 @@ class _RefrigeratorTabState extends State<RefrigeratorTab> {
   @override
   void initState() {
     super.initState();
+    _ingredientService = widget.ingredientService ?? IngredientService();
     _loadIngredients();
   }
 
