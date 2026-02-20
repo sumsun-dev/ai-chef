@@ -17,6 +17,8 @@ import 'package:ai_chef/services/ingredient_service.dart';
 import 'package:ai_chef/services/chat_service.dart';
 import 'package:ai_chef/services/notification_service.dart';
 import 'package:ai_chef/services/receipt_ocr_service.dart';
+import 'package:ai_chef/models/cooking_statistics.dart';
+import 'package:ai_chef/models/recipe_history.dart';
 import 'package:ai_chef/services/recipe_service.dart';
 import 'package:ai_chef/services/tts_service.dart';
 import 'package:ai_chef/services/tool_service.dart';
@@ -222,10 +224,14 @@ class FakeGeminiService with Fake implements GeminiService {
 class FakeRecipeService with Fake implements RecipeService {
   List<Recipe> bookmarkedRecipes;
   List<Map<String, dynamic>> history;
+  List<RecipeHistory> typedHistory;
+  CookingStatistics? statistics;
 
   FakeRecipeService({
     this.bookmarkedRecipes = const [],
     this.history = const [],
+    this.typedHistory = const [],
+    this.statistics,
   });
 
   @override
@@ -234,6 +240,14 @@ class FakeRecipeService with Fake implements RecipeService {
   @override
   Future<List<Map<String, dynamic>>> getRecipeHistory({int limit = 50}) async =>
       history;
+
+  @override
+  Future<List<RecipeHistory>> getRecipeHistoryTyped({int limit = 50}) async =>
+      typedHistory;
+
+  @override
+  Future<CookingStatistics> getCookingStatistics() async =>
+      statistics ?? CookingStatistics.empty();
 
   @override
   Future<List<Recipe>> getSavedRecipes() async => [];
@@ -484,6 +498,21 @@ class FakeShoppingService with Fake implements ShoppingService {
   Future<List<ShoppingItem>> getCheckedItems() async => checkedItems;
 }
 
+class FakeRecipeSharingService {
+  String? lastFormattedRecipe;
+  bool shareCalled = false;
+
+  String formatRecipeAsText(Recipe recipe) {
+    final text = '${recipe.title}\n${recipe.description}';
+    lastFormattedRecipe = text;
+    return text;
+  }
+
+  Future<void> shareRecipe(Recipe recipe) async {
+    shareCalled = true;
+  }
+}
+
 // --- 테스트 데이터 ---
 
 Map<String, dynamic> createTestProfile({
@@ -549,5 +578,68 @@ Ingredient createTestIngredient({
     expiryDate: expiryDate ?? DateTime.now().add(const Duration(days: 7)),
     storageLocation: StorageLocation.fridge,
     purchaseDate: DateTime.now(),
+  );
+}
+
+Recipe createTestRecipe({
+  String? id,
+  String title = '테스트 레시피',
+  String description = '맛있는 테스트 레시피입니다',
+  String cuisine = '한식',
+  RecipeDifficulty difficulty = RecipeDifficulty.easy,
+  int cookingTime = 15,
+  int servings = 2,
+  List<RecipeIngredient>? ingredients,
+  List<RecipeInstruction>? instructions,
+  NutritionInfo? nutrition,
+  String? chefNote,
+  bool isBookmarked = false,
+}) {
+  return Recipe(
+    id: id,
+    title: title,
+    description: description,
+    cuisine: cuisine,
+    difficulty: difficulty,
+    cookingTime: cookingTime,
+    servings: servings,
+    ingredients: ingredients ?? [],
+    tools: [],
+    instructions: instructions ?? [],
+    nutrition: nutrition,
+    chefNote: chefNote,
+    isBookmarked: isBookmarked,
+  );
+}
+
+RecipeIngredient createTestRecipeIngredient({
+  String name = '양파',
+  String quantity = '1',
+  String unit = '개',
+  bool isAvailable = true,
+  String? substitute,
+}) {
+  return RecipeIngredient(
+    name: name,
+    quantity: quantity,
+    unit: unit,
+    isAvailable: isAvailable,
+    substitute: substitute,
+  );
+}
+
+RecipeInstruction createTestInstruction({
+  int step = 1,
+  String title = '재료 준비',
+  String description = '재료를 씻어 준비합니다.',
+  int time = 5,
+  String? tips,
+}) {
+  return RecipeInstruction(
+    step: step,
+    title: title,
+    description: description,
+    time: time,
+    tips: tips,
   );
 }

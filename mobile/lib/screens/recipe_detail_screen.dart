@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../components/recipe_share_sheet.dart';
 import '../models/recipe.dart';
 import '../models/shopping_item.dart';
 import '../services/recipe_service.dart';
+import '../services/recipe_sharing_service.dart';
 import '../services/shopping_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -13,11 +15,15 @@ import '../theme/app_typography.dart';
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
   final ShoppingService? shoppingService;
+  final RecipeService? recipeService;
+  final RecipeSharingService? sharingService;
 
   const RecipeDetailScreen({
     super.key,
     required this.recipe,
     this.shoppingService,
+    this.recipeService,
+    this.sharingService,
   });
 
   @override
@@ -25,8 +31,9 @@ class RecipeDetailScreen extends StatefulWidget {
 }
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
-  final RecipeService _recipeService = RecipeService();
+  late final RecipeService _recipeService;
   late final ShoppingService _shoppingService;
+  late final RecipeSharingService _sharingService;
   late Recipe _recipe;
   bool _isSaved = false;
   bool _isSaving = false;
@@ -34,9 +41,21 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _recipeService = widget.recipeService ?? RecipeService();
     _shoppingService = widget.shoppingService ?? ShoppingService();
+    _sharingService = widget.sharingService ?? RecipeSharingService();
     _recipe = widget.recipe;
     _isSaved = _recipe.id != null;
+  }
+
+  void _showShareSheet() {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => RecipeShareSheet(
+        recipe: _recipe,
+        sharingService: _sharingService,
+      ),
+    );
   }
 
   Future<void> _saveRecipe() async {
@@ -99,6 +118,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       appBar: AppBar(
         title: Text(_recipe.title),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share),
+            onPressed: _showShareSheet,
+            tooltip: '공유',
+          ),
           if (!_isSaved)
             IconButton(
               icon: _isSaving
