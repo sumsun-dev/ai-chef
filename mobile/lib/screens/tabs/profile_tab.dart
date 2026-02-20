@@ -236,6 +236,17 @@ class _ProfileTabState extends State<ProfileTab> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
+          // 요리 통계
+          _buildSectionTitle('요리 활동'),
+          Card(
+            child: _buildSettingTile(
+              icon: Icons.bar_chart,
+              title: '요리 통계',
+              onTap: () => context.push('/profile/statistics'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+
           // 조리 도구
           _buildSectionTitle('조리 도구 관리'),
           Card(

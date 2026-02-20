@@ -19,6 +19,7 @@ import 'screens/recipe_detail_screen.dart';
 import 'screens/profile/chef_selection_screen.dart';
 import 'screens/profile/cooking_tools_screen.dart';
 import 'screens/profile/profile_edit_screen.dart';
+import 'screens/profile/statistics_screen.dart';
 import 'screens/expiry_alert_screen.dart';
 import 'screens/settings/notification_settings_screen.dart';
 import 'screens/settings/privacy_screen.dart';
@@ -147,6 +148,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/profile/edit',
         builder: (context, state) => const ProfileEditScreen(),
+      ),
+      GoRoute(
+        path: '/profile/statistics',
+        builder: (context, state) => const StatisticsScreen(),
       ),
       GoRoute(
         path: '/settings/notifications',

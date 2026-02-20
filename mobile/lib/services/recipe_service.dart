@@ -1,6 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../models/cooking_statistics.dart';
 import '../models/recipe.dart';
+import '../models/recipe_history.dart';
 
 /// 레시피 저장/북마크/기록 DB 서비스
 class RecipeService {
@@ -110,5 +112,17 @@ class RecipeService {
         .limit(limit);
 
     return List<Map<String, dynamic>>.from(response);
+  }
+
+  /// 요리 기록 조회 (타입 안전)
+  Future<List<RecipeHistory>> getRecipeHistoryTyped({int limit = 50}) async {
+    final raw = await getRecipeHistory(limit: limit);
+    return raw.map((item) => RecipeHistory.fromJson(item)).toList();
+  }
+
+  /// 요리 통계 계산
+  Future<CookingStatistics> getCookingStatistics() async {
+    final history = await getRecipeHistoryTyped(limit: 200);
+    return CookingStatistics.fromHistory(history);
   }
 }
