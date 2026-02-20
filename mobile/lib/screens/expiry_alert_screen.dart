@@ -9,10 +9,12 @@ import '../theme/app_colors.dart';
 /// 유통기한 알림 상세 화면
 class ExpiryAlertScreen extends StatefulWidget {
   final ExpiryStatus? initialFilter;
+  final IngredientService? ingredientService;
 
   const ExpiryAlertScreen({
     super.key,
     this.initialFilter,
+    this.ingredientService,
   });
 
   @override
@@ -21,7 +23,7 @@ class ExpiryAlertScreen extends StatefulWidget {
 
 class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
     with SingleTickerProviderStateMixin {
-  final IngredientService _ingredientService = IngredientService();
+  late final IngredientService _ingredientService;
   late TabController _tabController;
 
   ExpiryIngredientGroup? _expiryGroup;
@@ -31,6 +33,7 @@ class _ExpiryAlertScreenState extends State<ExpiryAlertScreen>
   @override
   void initState() {
     super.initState();
+    _ingredientService = widget.ingredientService ?? IngredientService();
     _tabController = TabController(length: 3, vsync: this);
 
     // 초기 탭 설정
