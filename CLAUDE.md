@@ -21,10 +21,10 @@ ai-chef/
 │       └── lib/      # Utilities, Gemini client
 ├── mobile/           # Flutter mobile app
 │   └── lib/
-│       ├── components/ # Reusable UI widgets
-│       ├── models/   # Data models
-│       ├── screens/  # Screen components
-│       ├── services/ # Business logic
+│       ├── components/ # Reusable UI widgets (ShoppingItemAddSheet, MoveToFridgeSheet 등)
+│       ├── models/   # Data models (Ingredient, Recipe, ShoppingItem 등)
+│       ├── screens/  # Screen components (tabs: Home, Recipe, Refrigerator, Shopping, Profile)
+│       ├── services/ # Business logic (IngredientService, ShoppingService 등)
 │       └── theme/    # Design tokens (colors, typography, spacing, theme)
 └── docs/             # Docs (PRD, schema, cost estimation)
 ```

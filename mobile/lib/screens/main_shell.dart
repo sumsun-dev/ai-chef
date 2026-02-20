@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-/// 메인 쉘 - 4탭 Bottom Navigation
+/// 메인 쉘 - 5탭 Bottom Navigation
 class MainShell extends StatelessWidget {
   final StatefulNavigationShell navigationShell;
 
@@ -37,6 +37,11 @@ class MainShell extends StatelessWidget {
             icon: Icon(Icons.kitchen_outlined),
             selectedIcon: Icon(Icons.kitchen),
             label: '냉장고',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.shopping_cart_outlined),
+            selectedIcon: Icon(Icons.shopping_cart),
+            label: '쇼핑',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

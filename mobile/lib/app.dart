@@ -28,6 +28,7 @@ import 'screens/tabs/home_tab.dart';
 import 'screens/tabs/recipe_tab.dart';
 import 'screens/tabs/refrigerator_tab.dart';
 import 'screens/tabs/profile_tab.dart';
+import 'screens/tabs/shopping_tab.dart';
 
 /// 앱 라우터 Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -160,7 +161,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HelpScreen(),
       ),
 
-      // 메인 4탭 네비게이션
+      // 메인 5탭 네비게이션
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return MainShell(navigationShell: navigationShell);
@@ -193,6 +194,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/refrigerator',
                 builder: (context, state) => const RefrigeratorTab(),
+              ),
+            ],
+          ),
+          // 쇼핑 탭
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/shopping',
+                builder: (context, state) => const ShoppingTab(),
               ),
             ],
           ),

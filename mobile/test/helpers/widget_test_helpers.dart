@@ -23,6 +23,8 @@ import 'package:ai_chef/services/tool_service.dart';
 import 'package:ai_chef/services/voice_command_service.dart';
 
 import 'package:ai_chef/models/chat_message.dart';
+import 'package:ai_chef/models/shopping_item.dart';
+import 'package:ai_chef/services/shopping_service.dart';
 
 export 'package:ai_chef/models/ingredient.dart' show ExpiryIngredientGroup;
 
@@ -272,6 +274,15 @@ class FakeReceiptOcrService with Fake implements ReceiptOcrService {
     return result ??
         ReceiptOcrResult(ingredients: [], purchaseDate: DateTime.now());
   }
+
+  @override
+  String buildOcrPrompt() => '테스트 프롬프트';
+
+  @override
+  ReceiptOcrResult parseResponse(String text) {
+    return result ??
+        ReceiptOcrResult(ingredients: [], purchaseDate: DateTime.now());
+  }
 }
 
 class FakeToolService with Fake implements ToolService {
@@ -425,6 +436,54 @@ class FakeCookingAudioService with Fake implements CookingAudioService {
   Future<void> dispose() async {}
 }
 
+class FakeShoppingService with Fake implements ShoppingService {
+  List<ShoppingItem> items;
+  List<ShoppingItem> checkedItems;
+  bool addItemCalled = false;
+  bool addItemsCalled = false;
+  bool toggleCheckCalled = false;
+  bool deleteItemCalled = false;
+  bool deleteCheckedCalled = false;
+
+  FakeShoppingService({
+    this.items = const [],
+    this.checkedItems = const [],
+  });
+
+  @override
+  Future<List<ShoppingItem>> getShoppingItems() async => items;
+
+  @override
+  Future<ShoppingItem> addShoppingItem(ShoppingItem item) async {
+    addItemCalled = true;
+    return item.copyWith(id: 'new-id');
+  }
+
+  @override
+  Future<List<ShoppingItem>> addShoppingItems(List<ShoppingItem> items) async {
+    addItemsCalled = true;
+    return items;
+  }
+
+  @override
+  Future<void> toggleCheck(String id, bool isChecked) async {
+    toggleCheckCalled = true;
+  }
+
+  @override
+  Future<void> deleteShoppingItem(String id) async {
+    deleteItemCalled = true;
+  }
+
+  @override
+  Future<void> deleteCheckedItems() async {
+    deleteCheckedCalled = true;
+  }
+
+  @override
+  Future<List<ShoppingItem>> getCheckedItems() async => checkedItems;
+}
+
 // --- 테스트 데이터 ---
 
 Map<String, dynamic> createTestProfile({
@@ -448,6 +507,30 @@ Map<String, dynamic> createTestProfile({
     'budget_preference': budgetPreference,
     'scenarios': <String>[],
   };
+}
+
+ShoppingItem createTestShoppingItem({
+  String id = 'shop-1',
+  String name = '양파',
+  String category = 'vegetable',
+  double quantity = 3,
+  String unit = '개',
+  bool isChecked = false,
+  ShoppingItemSource source = ShoppingItemSource.manual,
+  String? recipeTitle,
+  String? memo,
+}) {
+  return ShoppingItem(
+    id: id,
+    name: name,
+    category: category,
+    quantity: quantity,
+    unit: unit,
+    isChecked: isChecked,
+    source: source,
+    recipeTitle: recipeTitle,
+    memo: memo,
+  );
 }
 
 Ingredient createTestIngredient({

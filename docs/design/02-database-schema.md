@@ -15,12 +15,20 @@
 │  ingredients    │   │  chef_settings  │
 │  (냉장고 재료)   │   │  (셰프 설정)     │
 └─────────────────┘   └─────────────────┘
-      │
-      ▼
+      │       ▲
+      │       │ (냉장고 이동)
+      ▼       │
 ┌─────────────────┐   ┌─────────────────┐
 │ recipe_history  │───│    recipes      │
 │  (요리 기록)     │   │  (생성된 레시피) │
 └─────────────────┘   └─────────────────┘
+                            │
+                            │ (부족 재료 담기)
+                            ▼
+                      ┌─────────────────┐
+                      │ shopping_items  │
+                      │  (쇼핑 리스트)   │
+                      └─────────────────┘
 ```
 
 ---
@@ -123,7 +131,32 @@ CREATE TABLE recipes (
 );
 ```
 
-### 6. recipe_history (요리 기록)
+### 6. shopping_items (쇼핑 리스트)
+
+```sql
+CREATE TABLE shopping_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
+  category TEXT CHECK (category IN (
+    'vegetable','fruit','meat','seafood','dairy','egg','grain','seasoning','other'
+  )) DEFAULT 'other',
+  quantity DECIMAL DEFAULT 1,
+  unit TEXT DEFAULT '개',
+  is_checked BOOLEAN DEFAULT FALSE,
+  source TEXT CHECK (source IN ('manual','recipe')) DEFAULT 'manual',
+  recipe_title TEXT,
+  memo TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 인덱스
+CREATE INDEX idx_shopping_items_user ON shopping_items(user_id);
+CREATE INDEX idx_shopping_items_user_checked ON shopping_items(user_id, is_checked);
+```
+
+### 7. recipe_history (요리 기록)
 
 ```sql
 CREATE TABLE recipe_history (
@@ -150,6 +183,7 @@ ALTER TABLE cooking_tools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE ingredients ENABLE ROW LEVEL SECURITY;
 ALTER TABLE chef_settings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shopping_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipe_history ENABLE ROW LEVEL SECURITY;
 ```
 
@@ -185,6 +219,12 @@ CREATE POLICY "Users can manage own ingredients"
 -- chef_settings
 CREATE POLICY "Users can manage own chef settings"
   ON chef_settings FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- shopping_items (쇼핑 리스트)
+CREATE POLICY "Users can manage own shopping items"
+  ON shopping_items FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 
@@ -259,6 +299,10 @@ CREATE TRIGGER update_ingredients_updated_at
 
 CREATE TRIGGER update_chef_settings_updated_at
   BEFORE UPDATE ON chef_settings
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER update_shopping_items_updated_at
+  BEFORE UPDATE ON shopping_items
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 ```
 

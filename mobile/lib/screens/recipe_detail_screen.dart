@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/recipe.dart';
+import '../models/shopping_item.dart';
 import '../services/recipe_service.dart';
+import '../services/shopping_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
@@ -10,8 +12,13 @@ import '../theme/app_typography.dart';
 /// 레시피 상세 화면
 class RecipeDetailScreen extends StatefulWidget {
   final Recipe recipe;
+  final ShoppingService? shoppingService;
 
-  const RecipeDetailScreen({super.key, required this.recipe});
+  const RecipeDetailScreen({
+    super.key,
+    required this.recipe,
+    this.shoppingService,
+  });
 
   @override
   State<RecipeDetailScreen> createState() => _RecipeDetailScreenState();
@@ -19,6 +26,7 @@ class RecipeDetailScreen extends StatefulWidget {
 
 class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   final RecipeService _recipeService = RecipeService();
+  late final ShoppingService _shoppingService;
   late Recipe _recipe;
   bool _isSaved = false;
   bool _isSaving = false;
@@ -26,6 +34,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   @override
   void initState() {
     super.initState();
+    _shoppingService = widget.shoppingService ?? ShoppingService();
     _recipe = widget.recipe;
     _isSaved = _recipe.id != null;
   }
@@ -263,9 +272,62 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           ..._recipe.ingredients.map(
             (ingredient) => _buildIngredientRow(ingredient),
           ),
+          if (_missingIngredients.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            _buildAddToShoppingButton(),
+          ],
         ],
       ),
     );
+  }
+
+  List<RecipeIngredient> get _missingIngredients {
+    return _recipe.ingredients.where((i) => !i.isAvailable).toList();
+  }
+
+  Widget _buildAddToShoppingButton() {
+    final count = _missingIngredients.length;
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: _addMissingToShopping,
+        icon: const Icon(Icons.shopping_cart_outlined, size: 18),
+        label: Text('부족한 재료 $count개 쇼핑리스트 담기'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.primary,
+          side: const BorderSide(color: AppColors.primary),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _addMissingToShopping() async {
+    final items = _missingIngredients.map((ingredient) {
+      return ShoppingItem(
+        name: ingredient.name,
+        quantity: double.tryParse(ingredient.quantity) ?? 1,
+        unit: ingredient.unit,
+        source: ShoppingItemSource.recipe,
+        recipeTitle: _recipe.title,
+      );
+    }).toList();
+
+    try {
+      await _shoppingService.addShoppingItems(items);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${items.length}개 재료가 쇼핑리스트에 추가되었습니다.'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('쇼핑리스트 추가에 실패했습니다.')),
+        );
+      }
+    }
   }
 
   Widget _buildIngredientRow(RecipeIngredient ingredient) {
