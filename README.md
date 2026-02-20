@@ -9,7 +9,7 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 ## 핵심 기능
 
 - **나만의 AI 셰프** - 이름, 성격, 전문 분야를 커스터마이징한 개인 셰프
-- **3단계 온보딩** - AI 셰프 선택, 요리 실력 설정, 완료까지 간결한 멀티스텝
+- **멀티스텝 온보딩** - 환영 → 셰프 선택 → 실력 → 시나리오 → 도구 → 선호 → 냉장고 → 완료
 - **재료 관리** - 영수증 OCR 자동 등록, 유통기한 알림, 검색/카테고리 필터/정렬
 - **쇼핑 리스트** - 레시피 부족 재료 자동 담기, 카테고리 그룹핑, 구매 완료 시 냉장고 자동 추가
 - **맞춤 레시피** - 보유 재료와 도구 기반 AI 레시피 추천, 저장/북마크
@@ -26,6 +26,8 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 - **레시피 공유** - share_plus 활용 텍스트 공유 (재료/조리법/영양 정보 포함)
 - **시각적 가이드** - 사진 분석으로 실시간 요리 피드백
 - **알림 설정** - 유통기한 알림 스케줄/해제, SharedPreferences 영구 저장
+- **웹 AI 채팅** - 8가지 셰프 프리셋으로 웹에서 실시간 AI 대화
+- **웹 레시피 생성** - 재료/도구/선호도 입력으로 웹에서 맞춤 레시피 생성
 
 ---
 
@@ -75,24 +77,33 @@ AI Chef는 식재료 관리와 개인화된 레시피 추천을 결합한 요리
 ai-chef/
 ├── app/                    # Next.js 16 웹 앱
 │   └── src/
-│       ├── app/            # App Router (pages, API routes)
+│       ├── app/
+│       │   ├── (landing)/  # 랜딩 페이지 (/)
+│       │   ├── (app)/      # 앱 기능 페이지
+│       │   │   ├── chat/   # AI 채팅 (/chat)
+│       │   │   └── recipe/ # 레시피 생성 (/recipe)
 │       │   └── api/        # chat, recipe API endpoints
 │       ├── components/     # UI components (shadcn/ui)
+│       │   ├── ui/         # shadcn/ui 기본 컴포넌트
+│       │   ├── intro/      # WelcomeModal, IntroVideoPlayer
 │       │   └── landing/    # 랜딩 페이지 컴포넌트
-│       └── lib/            # Gemini client, utilities
-│           └── __tests__/  # Vitest 단위 테스트
+│       ├── hooks/          # useFirstVisit 등
+│       └── lib/            # Gemini client, Zustand stores, utilities
+│           ├── stores/     # chat-store, recipe-store
+│           └── __tests__/  # Vitest 단위 테스트 (54개)
 ├── mobile/                 # Flutter 모바일 앱
 │   ├── lib/
 │   │   ├── components/     # 공통 UI 컴포넌트 (ChefGreetingCard, RecipeCard, CookingTimer 등)
+│   │   ├── constants/      # 재료 카테고리, 기본값 상수
 │   │   ├── models/         # Ingredient, Recipe, Chef, ChatMessage, RecipeQuickFilter 등
 │   │   ├── screens/        # 화면 (Home, Refrigerator, Recipe, CookingMode, Chat 등)
 │   │   │   ├── tabs/       # Bottom navigation 탭 화면
-│   │   │   ├── onboarding/ # 3단계 온보딩 (셰프 선택 → 실력 → 완료)
+│   │   │   ├── onboarding/ # 멀티스텝 온보딩 (환영→셰프→실력→시나리오→도구→선호→냉장고→완료)
 │   │   │   ├── profile/    # 프로필 관리 (셰프/도구/설정/통계)
 │   │   │   └── settings/   # 설정 (알림, 개인정보, 도움말)
 │   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification, TTS, Voice, Audio, Sharing 서비스
 │   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
-│   └── test/               # 위젯/단위 테스트 (450개)
+│   └── test/               # 위젯/단위 테스트 (517개)
 ├── supabase/
 │   └── migrations/         # DB 마이그레이션 (source of truth)
 ├── docs/                   # PRD, 비용 추정, 설계 문서
