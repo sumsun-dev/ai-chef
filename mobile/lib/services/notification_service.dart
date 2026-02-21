@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 
@@ -8,13 +9,27 @@ import 'ingredient_service.dart';
 /// 유통기한 알림 서비스
 /// D-3, D-1, D-Day 재료에 대한 로컬 푸시 알림 관리
 class NotificationService {
-  static final NotificationService _instance = NotificationService._internal();
+  static final NotificationService _instance = NotificationService._internal(
+    notifications: FlutterLocalNotificationsPlugin(),
+    ingredientService: IngredientService(),
+  );
   factory NotificationService() => _instance;
-  NotificationService._internal();
 
-  final FlutterLocalNotificationsPlugin _notifications =
-      FlutterLocalNotificationsPlugin();
-  final IngredientService _ingredientService = IngredientService();
+  NotificationService._internal({
+    required FlutterLocalNotificationsPlugin notifications,
+    required IngredientService ingredientService,
+  })  : _notifications = notifications,
+        _ingredientService = ingredientService;
+
+  @visibleForTesting
+  NotificationService.forTesting({
+    required FlutterLocalNotificationsPlugin notifications,
+    required IngredientService ingredientService,
+  })  : _notifications = notifications,
+        _ingredientService = ingredientService;
+
+  final FlutterLocalNotificationsPlugin _notifications;
+  final IngredientService _ingredientService;
 
   bool _isInitialized = false;
 

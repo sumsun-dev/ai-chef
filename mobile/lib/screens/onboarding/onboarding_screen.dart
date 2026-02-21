@@ -13,7 +13,8 @@ import 'step_completion.dart';
 /// 온보딩 멀티스텝 화면 (3 페이지)
 /// ChefSelection -> SkillLevel -> Completion
 class OnboardingScreen extends StatefulWidget {
-  const OnboardingScreen({super.key});
+  final AuthService? authService;
+  const OnboardingScreen({super.key, this.authService});
 
   @override
   State<OnboardingScreen> createState() => _OnboardingScreenState();
@@ -22,31 +23,37 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   final OnboardingState _state = OnboardingState();
-  final AuthService _authService = AuthService();
+  late final AuthService _authService;
 
   int _currentPage = 0;
   bool _isAnimating = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _authService = widget.authService ?? AuthService();
+  }
 
   static const _totalPages = 3;
 
   Future<void> _nextPage() async {
     if (_isAnimating || _currentPage >= _totalPages - 1) return;
-    _isAnimating = true;
+    setState(() => _isAnimating = true);
     await _pageController.nextPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-    _isAnimating = false;
+    if (mounted) setState(() => _isAnimating = false);
   }
 
   Future<void> _previousPage() async {
     if (_isAnimating || _currentPage <= 0) return;
-    _isAnimating = true;
+    setState(() => _isAnimating = true);
     await _pageController.previousPage(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-    _isAnimating = false;
+    if (mounted) setState(() => _isAnimating = false);
   }
 
   bool get _canProceed {
@@ -137,6 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
             // PageView
             Expanded(
+              key: const ValueKey('onboarding-pageview'),
               child: PageView(
                 controller: _pageController,
                 physics: const NeverScrollableScrollPhysics(),
