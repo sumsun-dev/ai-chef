@@ -90,7 +90,7 @@ ai-chef/
 │       ├── hooks/          # useFirstVisit 등
 │       └── lib/            # Gemini client, Zustand stores, utilities
 │           ├── stores/     # chat-store, recipe-store
-│           └── __tests__/  # Vitest 단위 테스트 (54개)
+│           └── __tests__/  # Vitest 단위 테스트 (64개)
 ├── mobile/                 # Flutter 모바일 앱
 │   ├── lib/
 │   │   ├── components/     # 공통 UI 컴포넌트 (ChefGreetingCard, RecipeCard, CookingTimer 등)
@@ -103,7 +103,7 @@ ai-chef/
 │   │   │   └── settings/   # 설정 (알림, 개인정보, 도움말)
 │   │   ├── services/       # Supabase CRUD, Gemini, Chat, Recipe, Notification, TTS, Voice, Audio, Sharing 서비스
 │   │   └── theme/          # 디자인 토큰 (AppColors, AppTypography, AppSpacing, AppTheme)
-│   └── test/               # 위젯/단위 테스트 (517개)
+│   └── test/               # 위젯/단위 테스트 (546개)
 ├── supabase/
 │   └── migrations/         # DB 마이그레이션 (source of truth)
 ├── docs/                   # PRD, 비용 추정, 설계 문서
