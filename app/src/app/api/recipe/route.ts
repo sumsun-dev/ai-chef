@@ -21,8 +21,7 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ recipe });
-  } catch (error) {
-    console.error("Recipe API Error:", error);
+  } catch {
     return NextResponse.json(
       { error: "레시피 생성 중 오류가 발생했습니다." },
       { status: 500 }

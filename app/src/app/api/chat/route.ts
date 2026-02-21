@@ -18,8 +18,7 @@ export async function POST(request: NextRequest) {
     const response = await sendMessage(message, chefConfig, context);
 
     return NextResponse.json({ response });
-  } catch (error) {
-    console.error("Chat API Error:", error);
+  } catch {
     return NextResponse.json(
       { error: "AI 응답 생성 중 오류가 발생했습니다." },
       { status: 500 }
